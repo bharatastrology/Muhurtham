@@ -919,6 +919,13 @@
       align-items: flex-end;
       gap: 0.5rem;
     }
+    .score-grade {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--ba-text-muted);
+    }
     .btn-reject:hover {
       border-color: var(--ba-danger);
       color: var(--ba-danger);
@@ -1547,6 +1554,13 @@
             </div>
           </label>
           <label class="rule-toggle-item">
+            <input type="checkbox" id="omitPanchangaVetoes">
+            <div>
+              <div class="rule-name">Omit Panchanga Vetoes</div>
+              <div class="rule-hint">Amavasya, Vishti (Bhadra) karana, Vyatipata / Vaidhriti yoga and Chandrashtama (Moon 8th from Janma rashi). Omitted slots still lose 20 points.</div>
+            </div>
+          </label>
+          <label class="rule-toggle-item">
             <input type="checkbox" id="omitCombustion">
             <div>
               <div class="rule-name">Omit Combustion (Astangata) Penalties</div>
@@ -1747,6 +1761,20 @@
       "മേടം", "ഇടവം", "മിഥുനം", "കർക്കിടകം",
       "ചിങ്ങം", "കന്നി", "തുലാം", "വൃശ്ചികം",
       "ധനു", "മകരം", "കുംഭം", "മീനം"
+    ];
+
+    const TITHI_NAMES = [
+      "Pratipada", "Dvitiya", "Tritiya", "Chaturthi", "Panchami", "Shashthi", "Saptami", "Ashtami",
+      "Navami", "Dashami", "Ekadashi", "Dvadashi", "Trayodashi", "Chaturdashi", "Purnima"
+    ];
+    // Tithi label for index 0..29 (Shukla 0..14, Krishna 15..29 ending in Amavasya)
+    const getTithiName = (idx) => idx === 29 ? "Krishna Amavasya"
+      : `${idx < 15 ? "Shukla" : "Krishna"} ${TITHI_NAMES[idx % 15]}`;
+
+    const YOGA_NAMES = [
+      "Vishkambha", "Priti", "Ayushman", "Saubhagya", "Shobhana", "Atiganda", "Sukarma", "Dhriti",
+      "Shula", "Ganda", "Vriddhi", "Dhruva", "Vyaghata", "Harshana", "Vajra", "Siddhi", "Vyatipata",
+      "Variyan", "Parigha", "Shiva", "Siddha", "Sadhya", "Shubha", "Shukla", "Brahma", "Indra", "Vaidhriti"
     ];
 
     const NAKSHATRA_NAMES = [
@@ -2071,7 +2099,7 @@
       const uncheckAll = () => {
         ["omitRahuKalam", "omitGulikaKalam", "omitYamagandam", "omitMasaSankramana",
          "omitAshtamaShuddhi", "omitVadhaTara", "omitVocMoon", "omitKpNegation",
-         "omitBaziBreakers", "omitCombustion"].forEach(id => {
+         "omitBaziBreakers", "omitCombustion", "omitPanchangaVetoes"].forEach(id => {
           document.getElementById(id).checked = false;
         });
       };
@@ -2090,7 +2118,7 @@
         // Open Discovery: Check all omission boxes so user can discover all positive time slots
         ["omitRahuKalam", "omitGulikaKalam", "omitYamagandam", "omitMasaSankramana",
          "omitAshtamaShuddhi", "omitVadhaTara", "omitVocMoon", "omitKpNegation",
-         "omitBaziBreakers", "omitCombustion"].forEach(id => {
+         "omitBaziBreakers", "omitCombustion", "omitPanchangaVetoes"].forEach(id => {
           document.getElementById(id).checked = true;
         });
       }
@@ -2101,7 +2129,7 @@
       const allRuleIds = [
         "omitRahuKalam", "omitGulikaKalam", "omitYamagandam", "omitMasaSankramana",
         "omitAshtamaShuddhi", "omitVadhaTara", "omitVocMoon", "omitKpNegation",
-        "omitBaziBreakers", "omitCombustion"
+        "omitBaziBreakers", "omitCombustion", "omitPanchangaVetoes"
       ];
       const checkedCount = allRuleIds.filter(id => {
         const el = document.getElementById(id);
@@ -2262,7 +2290,7 @@
       const allRuleIds = [
         "omitRahuKalam", "omitGulikaKalam", "omitYamagandam", "omitMasaSankramana",
         "omitAshtamaShuddhi", "omitVadhaTara", "omitVocMoon", "omitKpNegation",
-        "omitBaziBreakers", "omitCombustion"
+        "omitBaziBreakers", "omitCombustion", "omitPanchangaVetoes"
       ];
       allRuleIds.forEach(id => {
         const el = document.getElementById(id);
@@ -2543,8 +2571,139 @@
     // Classical combustion (Astangata) orbs from the Sun, Surya Siddhanta (direct motion)
     const COMBUSTION_ORBS = { mercury: 14, venus: 10, mars: 17, jupiter: 11, saturn: 15 };
 
+    // Panchanga limbs from sidereal Sun/Moon longitudes (0-based indices):
+    // tithi 0 = Shukla Pratipada .. 14 = Purnima, 15 = Krishna Pratipada .. 29 = Amavasya;
+    // yoga 0 = Vishkambha .. 26 = Vaidhriti; karana 0..59 half-tithis (0 = Kimstughna,
+    // 1..56 = Bava..Vishti cycle, 57 = Shakuni, 58 = Chatushpada, 59 = Naga)
+    function getPanchangaLimbs(sunLong, moonLong) {
+      const elong = ((moonLong - sunLong) % 360 + 360) % 360;
+      return {
+        elongation: elong,
+        tithiIdx: Math.floor(elong / 12),
+        yogaIdx: Math.floor((((sunLong + moonLong) % 360 + 360) % 360) / (360 / 27)),
+        karanaIdx: Math.floor(elong / 6)
+      };
+    }
+
+    const KARANA_CYCLE = ["Bava", "Balava", "Kaulava", "Taitila", "Gara", "Vanija", "Vishti"];
+    function getKaranaName(karanaIdx) {
+      if (karanaIdx === 0) return "Kimstughna";
+      if (karanaIdx >= 57) return ["Shakuni", "Chatushpada", "Naga"][karanaIdx - 57];
+      return KARANA_CYCLE[(karanaIdx - 1) % 7];
+    }
+
     // Tarabala per Muhurta Chintamani: Vipat (3), Pratyak (5) and Vadha (7) are rejected in the
     // 1st paryaya; in the 2nd/3rd only Vipat pada 1, Pratyak pada 4 and Vadha pada 3 are rejected
+    // -------------------------------------------------------------------------
+    // Muhurta quality scoring for business beginnings (Panchanga Shuddhi, Chandrabala,
+    // lagna strength, paksha bala). Point values per specialist review of Muhurta
+    // Chintamani, Muhurta Martanda, Kalaprakasika and B.V. Raman's "Muhurtha".
+    // -------------------------------------------------------------------------
+    const TITHI_POINTS = [2, 10, 10, -15, 10, 4, 8, -6, -15, 10, 8, 4, 10, -15, 6,
+                          6, 6, 6, -15, 4, 0, 0, -8, -15, -4, -4, -6, -8, -20, null]; // 29 Amavasya = veto
+    const VARA_POINTS = [2, 5, -6, 8, 8, 8, -3]; // Sun..Sat
+    const NAKSHATRA_CLASS_POINTS = (() => {
+      const pts = new Array(27).fill(0);
+      const set = (idxs, p) => idxs.forEach(i => { pts[i] = p; });
+      set([0, 7, 12], 10);          // Kshipra / Laghu
+      set([3, 11, 20, 25], 10);     // Dhruva / Sthira
+      set([4, 13, 16, 26], 8);      // Mridu / Maitra
+      set([6, 14, 21, 22, 23], 6);  // Chara
+      set([2, 15], -4);             // Mishra
+      set([1, 9, 10, 19, 24], -10); // Ugra
+      set([5, 8, 17, 18], -12);     // Tikshna
+      return pts;
+    })();
+    const GOOD_YOGAS = [1, 2, 3, 4, 6, 7, 10, 11, 13, 15, 19, 20, 21, 22, 23, 24, 25];
+    const PARTIAL_BAD_YOGA_GHATIS = { 0: 3, 14: 3, 8: 5, 9: 6, 5: 6, 12: 9, 18: 30 }; // bad only in first N ghatikas
+    const VETO_YOGAS = [16, 26]; // Vyatipata, Vaidhriti
+    const KARAKA_DAY = { mars: 2, saturn: 6 };
+
+    function evaluateMuhurtaQuality(ctx) {
+      const { sunLong, moonLong, dayOfWeek, nakshatraIdx, janmaRashiIdx, asc, planets, karakaKey } = ctx;
+      const limbs = getPanchangaLimbs(sunLong, moonLong);
+      const isShukla = limbs.tithiIdx < 15;
+      const vetoes = [];
+      const parts = {};
+
+      // Tithi
+      if (limbs.tithiIdx === 29) vetoes.push("Amavasya");
+      parts.tithi = TITHI_POINTS[limbs.tithiIdx] || 0;
+
+      // Vara (a malefic karaka's own weekday is not penalised)
+      let vara = VARA_POINTS[dayOfWeek];
+      if (KARAKA_DAY[karakaKey] === dayOfWeek) vara = Math.max(vara, 3);
+      parts.vara = vara;
+
+      // Nakshatra class
+      parts.nakshatra = NAKSHATRA_CLASS_POINTS[nakshatraIdx];
+
+      // Yoga (partial yogas are inauspicious only in their opening ghatikas)
+      const yogaSpan = 360 / 27;
+      const yogaElapsed = ((((sunLong + moonLong) % 360) + 360) % 360 % yogaSpan) / yogaSpan;
+      if (VETO_YOGAS.includes(limbs.yogaIdx)) vetoes.push(YOGA_NAMES[limbs.yogaIdx] + " yoga");
+      if (GOOD_YOGAS.includes(limbs.yogaIdx)) parts.yoga = 4;
+      else if (PARTIAL_BAD_YOGA_GHATIS[limbs.yogaIdx] !== undefined) {
+        parts.yoga = yogaElapsed * 60 < PARTIAL_BAD_YOGA_GHATIS[limbs.yogaIdx] ? -12 : 0;
+      } else parts.yoga = 0;
+
+      // Karana
+      const k = limbs.karanaIdx;
+      if (k === 0) parts.karana = -2;
+      else if (k >= 57) parts.karana = -8;
+      else if ((k - 1) % 7 === 6) { parts.karana = 0; vetoes.push("Vishti (Bhadra) karana"); }
+      else parts.karana = (k - 1) % 7 === 5 ? 4 : 2;
+
+      // Chandrabala: Moon's sign counted from the promoter's Janma rashi
+      const moonRashi = Math.floor(moonLong / 30);
+      const cbHouse = ((moonRashi - janmaRashiIdx + 12) % 12) + 1;
+      if (cbHouse === 8) { parts.chandrabala = 0; vetoes.push("Chandrashtama"); }
+      else if ([1, 3, 6, 7, 10, 11].includes(cbHouse)) parts.chandrabala = 8;
+      else if ([2, 5, 9].includes(cbHouse)) parts.chandrabala = isShukla ? 3 : 0;
+      else parts.chandrabala = -8; // 4, 12
+
+      // Lagna sign nature: fixed best for lasting enterprises
+      parts.lagnaSign = [1, 4, 7, 10].includes(asc.rashiIdx) ? 6 : ([2, 5, 8, 11].includes(asc.rashiIdx) ? 3 : 0);
+
+      // Planets by house from lagna (block clamped to [-15, +20])
+      const houseOf = (lon) => ((Math.floor(lon / 30) - asc.rashiIdx + 12) % 12) + 1;
+      const KENDRA = [1, 4, 7, 10];
+      const waxingMoon = limbs.elongation < 180;
+      let placement = 0;
+      const benefics = [["jupiter", 6], ["venus", 5], ["mercury", 4]];
+      if (waxingMoon) benefics.push(["moon", 3]);
+      benefics.forEach(([p, kendraPts]) => {
+        const h = houseOf(planets[p]);
+        if (KENDRA.includes(h)) placement += kendraPts;
+        if (h === 5 || h === 9) placement += 3;
+      });
+      ["sun", "mars", "saturn", "rahu", "ketu"].forEach(p => {
+        const h = houseOf(planets[p]);
+        if ([3, 6, 11].includes(h)) placement += 3;
+        else if (KENDRA.includes(h)) placement -= 4;
+        else if (h === 12) placement -= 2;
+      });
+      parts.placement = Math.max(-15, Math.min(20, placement));
+
+      // Lagna sandhi (rising degree at a sign edge)
+      const deg = asc.degInRashi;
+      parts.sandhi = (deg < 1 || deg > 29) ? -6 : ((deg < 2 || deg > 28) ? -3 : 0);
+
+      // Paksha bala: Moon strength by distance from the Sun (-4 at Amavasya .. +6 at Purnima)
+      parts.paksha = Math.round(10 * (1 - Math.abs(limbs.elongation - 180) / 180)) - 4;
+
+      return { ...limbs, isShukla, yogaElapsed, cbHouse, vetoes, parts,
+               total: Object.values(parts).reduce((a, b) => a + b, 0) };
+    }
+
+    // Raw points -> displayed 0-100 score on a fixed scale (raw 0 = 50, +60 = 99, -60 = 1)
+    function toDisplayScore(raw) {
+      return Math.max(1, Math.min(99, Math.round(50 + raw * 5 / 6)));
+    }
+    function getScoreGrade(score) {
+      return score >= 85 ? "Excellent" : (score >= 70 ? "Good" : (score >= 55 ? "Fair" : "Weak"));
+    }
+
     const TARA_BONUS = { 2: 18, 4: 12, 6: 14, 8: 12, 9: 16 };
     const TARA_VETO_PADA = { 3: 1, 5: 4, 7: 3 };
     function evaluateTara(taraIdx, taraCycle, pada) {
@@ -3168,6 +3327,7 @@
       const birthEphem = calculateEphemeris(dobParts[0], dobParts[1], dobParts[2], tobParts[0] || 0, tobParts[1] || 0, birthTz, birthLat, birthLon);
       const birthMoonLong = birthEphem.planets.moon;
       const promoterJanmaNakIdx = Math.floor(birthMoonLong / (360 / 27));
+      const promoterJanmaRashiIdx = Math.floor(birthMoonLong / 30);
 
       // Read Business Place Coordinates
       const busSelect = document.getElementById("businessPlace");
@@ -3205,6 +3365,7 @@
       const omitKpNeg = document.getElementById("omitKpNegation").checked;
       const omitBazi = document.getElementById("omitBaziBreakers").checked;
       const omitCombust = document.getElementById("omitCombustion").checked;
+      const omitPanchanga = document.getElementById("omitPanchangaVetoes").checked;
 
       // Dynamic Rahu & Gulika octants by weekday (0 = Sun, 1 = Mon ... 6 = Sat)
       const rahuOctants = [8, 2, 7, 5, 6, 4, 3];
@@ -3339,8 +3500,15 @@
           // Real Qi Men Dun Jia (QMDJ)
           const qmdjDoor = getQMDJ(jd, evalHour);
 
+          // Panchanga Shuddhi, Chandrabala, lagna strength and paksha bala
+          const quality = evaluateMuhurtaQuality({
+            sunLong, moonLong, dayOfWeek, nakshatraIdx, janmaRashiIdx: promoterJanmaRashiIdx,
+            asc, planets, karakaKey
+          });
+
           // Candidate Pruning Conditioned on Active Astrology Systems
           if (sysVedic) {
+            if (quality.vetoes.length > 0 && !omitPanchanga && !isSingleDay) return;
             if (taraEval.veto && !omitVadha && !isSingleDay) return;
             if (hasRahuOverlap && !omitRahu) return;
             if (hasGulikaOverlap && !omitGulika) return;
@@ -3362,25 +3530,29 @@
             if (isVoc && !omitVoc && !isSingleDay) return;
           }
 
-          // Dynamic Composite Scoring Algorithm Conditioned on Active Systems
-          let score = 70;
+          // Composite raw points (no base): classical quality factors plus the active systems,
+          // shown on a fixed 1-99 scale so a score means the same thing in every search
+          let score = 0;
           let consensusBadges = [];
 
           // 1. Vedic Consensus Contributions
           if (sysVedic) {
-            // Tarabalam Score Impact (cycle/pada aware, see evaluateTara)
-            score += taraEval.delta;
-            if (taraEval.delta > 0) consensusBadges.push(`${TARA_NAMES[taraIdx - 1]} Tara (+${taraEval.delta})`);
+            score += quality.total;
+            if (quality.vetoes.length > 0) score -= 20; // only reachable when Panchanga vetoes are omitted
+            if (quality.parts.chandrabala >= 8) consensusBadges.push("Chandrabala (+8)");
+            if (quality.parts.nakshatra >= 8) consensusBadges.push(`${NAKSHATRA_NAMES[nakshatraIdx]} Nakshatra (+${quality.parts.nakshatra})`);
+            if (quality.parts.tithi >= 8) consensusBadges.push(`${getTithiName(quality.tithiIdx)} (+${quality.parts.tithi})`);
+
+            // Tarabalam Score Impact (cycle/pada aware, see evaluateTara), weighted 0.4
+            const taraPts = Math.round(taraEval.delta * 0.4);
+            score += taraPts;
+            if (taraPts > 0) consensusBadges.push(`${TARA_NAMES[taraIdx - 1]} Tara (+${taraPts})`);
 
             // Ashtama Shuddhi Impact
             if (isAshtamaPure) {
-              score += 10;
-              consensusBadges.push("Ashtama Shuddhi (+10)");
-            } else if (!hasMaleficIn8th) {
-              // Benefic in 8th (e.g. Exalted Jupiter in Cancer) brings grace without malefic dosha
-              score += 6;
-              consensusBadges.push("Exalted Benefic in 8th (+6)");
-            } else {
+              score += 4;
+              consensusBadges.push("Ashtama Shuddhi (+4)");
+            } else if (hasMaleficIn8th) {
               score -= 15;
             }
 
@@ -3393,14 +3565,14 @@
             if (nature === "TECH_AI") {
               const mercRashi = Math.floor(planets.mercury / 30);
               if (mercRashi === asc.rashiIdx || mercRashi === ((asc.rashiIdx + 9) % 12)) {
-                score += 10;
-                consensusBadges.push("Budha Karaka Alignment (+10)");
+                score += 8;
+                consensusBadges.push("Budha Karaka Alignment (+8)");
               }
             } else if (nature === "RETAIL_FMCG" || nature === "CONSULTING_LAW") {
               const jupRashi = Math.floor(planets.jupiter / 30);
               if (jupRashi === asc.rashiIdx || jupRashi === ((asc.rashiIdx + 8) % 12)) {
-                score += 10;
-                consensusBadges.push("Guru Karaka Alignment (+10)");
+                score += 8;
+                consensusBadges.push("Guru Karaka Alignment (+8)");
               }
             }
           }
@@ -3411,7 +3583,7 @@
               score -= 12;
             }
             if (kpHasGain) {
-              score += 8;
+              score += 5;
               consensusBadges.push(`KP Sub-Lord ${kpResult.subLord}`);
             }
           }
@@ -3422,7 +3594,7 @@
               score -= 10;
             }
             if (westAspect.nature === "benefic") {
-              score += 6;
+              score += 3;
               consensusBadges.push("Western Benefic Aspect");
             }
           }
@@ -3434,7 +3606,7 @@
             }
             // QMDJ Favorable Door
             if (qmdjDoor.name.includes("Open") || qmdjDoor.name.includes("Life") || qmdjDoor.name.includes("Rest")) {
-              score += 6;
+              score += 3;
               consensusBadges.push(qmdjDoor.name.split(" ")[0] + " Door");
             }
           }
@@ -3445,7 +3617,8 @@
             consensusBadges.push("⚠️ Internal Fallback");
           }
 
-          score = Math.min(99, Math.max(45, score));
+          const rawScore = score;
+          score = toDisplayScore(rawScore);
 
           const pad = (n) => n.toString().padStart(2, '0');
           const dateStr = curDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
@@ -3470,6 +3643,9 @@
             timeWindow: timeWindow,
             targetTime: targetTime,
             score: score,
+            rawScore: rawScore,
+            grade: getScoreGrade(score),
+            quality: quality,
             ephemEngine: ephem.engineName,
             ephemEngineShort: ephem.engineShort,
             isSwissEph: ephem.isSwissEph,
@@ -3554,6 +3730,7 @@
               omitKpNeg: omitKpNeg,
               omitBazi: omitBazi,
               omitCombust: omitCombust,
+              omitPanchanga: omitPanchanga,
               sysVedic: sysVedic,
               sysKP: sysKP,
               sysWestern: sysWestern,
@@ -3699,8 +3876,12 @@
       if (currentSortMode === "chronological") {
         generatedCandidates.sort((a, b) => a.timestamp - b.timestamp);
       } else {
-        // Default: Recommendation (highest score first)
-        generatedCandidates.sort((a, b) => b.score - a.score);
+        // Default: Recommendation (highest score first); ties broken by Chandrabala, Nakshatra, Tithi
+        const q = (c, k) => (c.quality && c.quality.parts ? c.quality.parts[k] : 0);
+        generatedCandidates.sort((a, b) =>
+          (b.rawScore - a.rawScore) || (b.score - a.score) ||
+          (q(b, "chandrabala") - q(a, "chandrabala")) || (q(b, "nakshatra") - q(a, "nakshatra")) ||
+          (q(b, "tithi") - q(a, "tithi")) || (a.timestamp - b.timestamp));
       }
     }
 
@@ -4276,7 +4457,12 @@
           ? "ഈ മുഹൂർത്തം ഡോസിയറിൽ നിന്ന് ഒഴിവാക്കുക (ഘട്ടം 3-ൽ രേഖപ്പെടുത്തും)"
           : "Remove this muhurtham from the dossier. Step 3 will remember it as rejected.";
         rejectBtn.onclick = () => rejectFromDossier(cand.id);
+        scoreBadge.className = "candidate-score-badge " + (cand.score >= 85 ? "high" : "medium");
+        const gradeLabel = document.createElement("div");
+        gradeLabel.className = "score-grade";
+        gradeLabel.textContent = cand.grade || getScoreGrade(cand.score);
         headerRight.appendChild(scoreBadge);
+        headerRight.appendChild(gradeLabel);
         headerRight.appendChild(rejectBtn);
 
         header.appendChild(titleBox);
@@ -4303,6 +4489,7 @@
           omitKpNeg: document.getElementById("omitKpNegation") ? document.getElementById("omitKpNegation").checked : false,
           omitBazi: document.getElementById("omitBaziBreakers") ? document.getElementById("omitBaziBreakers").checked : false,
           omitCombust: document.getElementById("omitCombustion") ? document.getElementById("omitCombustion").checked : false,
+          omitPanchanga: document.getElementById("omitPanchangaVetoes") ? document.getElementById("omitPanchangaVetoes").checked : false,
           sysVedic: document.getElementById("sysVedic") ? document.getElementById("sysVedic").checked : true,
           sysKP: document.getElementById("sysKP") ? document.getElementById("sysKP").checked : true,
           sysWestern: document.getElementById("sysWestern") ? document.getElementById("sysWestern").checked : true,
@@ -4310,6 +4497,43 @@
         };
 
         const taraEval = evaluateTara(cand.taraIdx, cand.taraCycle, cand.nakshatraPada);
+        const qual = cand.quality;
+        const fmtPts = (n) => (n > 0 ? `+${n}` : `${n}`);
+        const ptsColor = (n, good, ok) => (n >= good ? "green" : (n >= ok ? "amber" : "red"));
+        const qualityRows = !qual ? [] : [
+          {
+            key: isMl ? "പഞ്ചാംഗ ശുദ്ധി" : "Panchanga Shuddhi",
+            val: `${getTithiName(qual.tithiIdx)} · ${YOGA_NAMES[qual.yogaIdx]} ${isMl ? "യോഗം" : "yoga"} · ${getKaranaName(qual.karanaIdx)} ${isMl ? "കരണം" : "karana"}`,
+            desc: (isMl ? "പോയിന്റുകൾ: " : "Points: ") +
+              `${isMl ? "തിഥി" : "tithi"} ${fmtPts(qual.parts.tithi)}, ${isMl ? "വാരം" : "weekday"} ${fmtPts(qual.parts.vara)}, ` +
+              `${isMl ? "നക്ഷത്രം" : "nakshatra class"} ${fmtPts(qual.parts.nakshatra)}, ${isMl ? "യോഗം" : "yoga"} ${fmtPts(qual.parts.yoga)}, ` +
+              `${isMl ? "കരണം" : "karana"} ${fmtPts(qual.parts.karana)}` +
+              (qual.vetoes.length ? ` · ${isMl ? "ദോഷം" : "Dosha"}: ${qual.vetoes.join(", ")}` : ""),
+            color: qual.vetoes.length ? "red" : ptsColor(qual.parts.tithi + qual.parts.vara + qual.parts.nakshatra + qual.parts.yoga + qual.parts.karana, 15, 0),
+            isOmitted: qual.vetoes.length > 0 && Boolean(o.omitPanchanga),
+            omittedLabel: isMl ? "പഞ്ചാംഗ ദോഷം ഒഴിവാക്കപ്പെട്ടു" : "Panchanga veto omitted in Step 2"
+          },
+          {
+            key: isMl ? "ചന്ദ്രബലം" : "Chandrabala",
+            val: isMl ? `ജന്മരാശിയിൽ നിന്ന് ${qual.cbHouse}-ാം ഭാവത്തിൽ ചന്ദ്രൻ` : `Moon in house ${qual.cbHouse} from Janma rashi`,
+            desc: isMl
+              ? `പോയിന്റ് ${fmtPts(qual.parts.chandrabala)}. 1, 3, 6, 7, 10, 11 ഉത്തമം; 8 (ചന്ദ്രാഷ്ടമം) വർജ്ജ്യം.`
+              : `${fmtPts(qual.parts.chandrabala)} points. Houses 1, 3, 6, 7, 10, 11 are strong; 2, 5, 9 only in Shukla paksha; 8 (Chandrashtama) is rejected.`,
+            color: qual.cbHouse === 8 ? "red" : ptsColor(qual.parts.chandrabala, 8, 0),
+            isOmitted: false,
+            omittedLabel: ""
+          },
+          {
+            key: isMl ? "ലഗ്ന ബലം" : "Lagna Strength",
+            val: `${fmtPts(qual.parts.lagnaSign + qual.parts.placement + qual.parts.sandhi)} ${isMl ? "പോയിന്റ്" : "points"}`,
+            desc: isMl
+              ? `രാശി സ്വഭാവം ${fmtPts(qual.parts.lagnaSign)}, ഗ്രഹസ്ഥിതി ${fmtPts(qual.parts.placement)}, ലഗ്ന സന്ധി ${fmtPts(qual.parts.sandhi)}, പക്ഷബലം ${fmtPts(qual.parts.paksha)}.`
+              : `Sign nature ${fmtPts(qual.parts.lagnaSign)} (fixed signs best), planets by house ${fmtPts(qual.parts.placement)} (benefics in kendras/trikonas, malefics in 3/6/11), sign-edge sandhi ${fmtPts(qual.parts.sandhi)}, Moon paksha bala ${fmtPts(qual.parts.paksha)}.`,
+            color: ptsColor(qual.parts.lagnaSign + qual.parts.placement + qual.parts.sandhi, 10, 0),
+            isOmitted: false,
+            omittedLabel: ""
+          }
+        ];
 
         const rows = [
           {
@@ -4448,6 +4672,7 @@
             isEphemeris: true
           }
         ];
+        rows.splice(4, 0, ...qualityRows); // after Tarabalam
 
         rows.forEach(r => {
           const tr = document.createElement("tr");
@@ -4905,7 +5130,7 @@
         const tara = isMl ? TARA_NAMES_ML[c.taraIdx - 1] : c.tara;
         [`#${i + 1}`, c.dateDisplay, c.timeWindow, lagna, `${nak} (${L("pada", "പാദം")} ${c.nakshatraPada})`, tara]
           .forEach(v => tr.appendChild(el("td", "", v)));
-        tr.appendChild(el("td", "pr-score", `${c.score}%`));
+        tr.appendChild(el("td", "pr-score", `${c.score} · ${c.grade || getScoreGrade(c.score)}`));
         summary.appendChild(tr);
       });
       cover.appendChild(summary);

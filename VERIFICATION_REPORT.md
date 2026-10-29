@@ -74,6 +74,37 @@ The Tara rule came from a specialist review of Muhurta Chintamani, Muhurta Marta
 
 **Swiss Ephemeris licence:** the library is dual-licensed by Astrodienst (AGPL-3.0 or commercial). The `swisseph-wasm` wrapper is GPL-3.0-or-later. This repository is AGPL-3.0 and public, which satisfies the AGPL option. A closed-source or modified deployment that isn't published would need Astrodienst's commercial licence.
 
-## 6. Notes
+## 6. Scoring model v2 (spreading out the 99% scores)
+
+**Problem.** The old score was 70 plus up to about +58 in bonuses, capped at 99. Almost every slot that passed the vetoes showed 99%, so there was nothing to choose between.
+
+**New model.** The model comes from a specialist review of Muhurta Chintamani, Muhurta Martanda, Kalaprakasika and Raman's *Muhurtha*. The integer point values are a calibrated synthesis, not figures quoted from one text.
+
+- **New vetoes** (overridable in Step 2 via "Omit Panchanga Vetoes"): Amavasya, Vishti (Bhadra) karana, Vyatipata and Vaidhriti yogas, and Chandrashtama.
+- **New points:**
+  - Tithi: Rikta and late Krishna tithis are penalised.
+  - Weekday: Wednesday, Thursday and Friday are best for commerce.
+  - Nakshatra class: Kshipra and Dhruva +10, down to Tikshna −12.
+  - Yoga: including partial yogas, which are bad only in their first ghatikas.
+  - Karana: Vanija +4.
+  - Chandrabala.
+  - Lagna sign nature: fixed signs best.
+  - Planets by house from lagna, capped at −15 to +20.
+  - Lagna at a sign edge (sandhi).
+  - Paksha bala.
+- **Existing bonuses re-weighted:** Tara ×0.4, Ashtama +4, karaka +8, KP +5, Western +3, QMDJ +3. The base of 70 is gone.
+- **Display score:** `clamp(round(50 + raw × 5/6), 1, 99)` on a fixed scale, so a score means the same thing in every search. Grades: Excellent ≥ 85, Good 70–84, Fair 55–69, Weak < 55.
+- **Ties** are broken by Chandrabala, then Nakshatra, then Tithi.
+
+**Result** (Trivandrum, default promoter):
+
+| Search | Slots | At 99 before | At 99 now | Distinct scores | Range |
+|---|---|---|---|---|---|
+| 2 Nov – 15 Dec 2026 | 11 | most | 0 | 11 | 63–95 |
+| Jan – Mar 2027 | 19 | most | 1 | 14 | 32–99 |
+
+**Check.** Tithi, yoga and karana indices and the Panchanga veto detection match pyswisseph for all 26 slots of a Nov 2026 – Jan 2027 search with vetoes omitted (`verify/compare_panchanga.py`, `verify/results_panchanga.txt`).
+
+## 7. Notes
 
 - pyswisseph had no `.se1` files, so the reference ran in Moshier mode (about 1″). That is well inside every tolerance used here.
