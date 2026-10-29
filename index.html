@@ -913,6 +913,27 @@
       padding-bottom: 0.85rem;
     }
 
+    .scrutiny-header-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.5rem;
+    }
+    .btn-reject:hover {
+      border-color: var(--ba-danger);
+      color: var(--ba-danger);
+    }
+    .candidate-card.rejected, .day-slot-row.rejected { opacity: 0.6; }
+    .calendar-slot-pill.rejected { opacity: 0.55; text-decoration: line-through; }
+    .tag-rejected {
+      margin-left: 0.5rem;
+      border: 1px solid var(--ba-danger) !important;
+      color: var(--ba-danger) !important;
+      font-weight: 700;
+      font-size: 0.7rem;
+      vertical-align: middle;
+    }
+
     .kundali-wrapper {
       display: flex;
       justify-content: center;
@@ -1058,14 +1079,72 @@
       margin-right: 1rem;
     }
 
-    /* Print Dossier Formatting */
+    /* Print-only report blocks (built by buildPrintReport before printing) */
+    .print-only { display: none; }
+
+    /* Print Dossier Formatting: A4 report of Step 4 only, light palette regardless of screen theme */
+    @page { size: A4; margin: 14mm 12mm 16mm; }
     @media print {
-      body { background: #ffffff !important; color: #000000 !important; }
-      header, .stepper, .preset-bar, .floating-dock, .no-print, footer, .btn { display: none !important; }
-      .panel { display: block !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
-      .scrutiny-card { border: 1px solid #ccc !important; page-break-inside: avoid; break-inside: avoid; margin-bottom: 2rem; }
+      :root, [data-theme="light"], [data-theme="dark"] {
+        --ba-bg: #ffffff;
+        --ba-surface: #ffffff;
+        --ba-surface-border: #cbd5e1;
+        --ba-text-main: #0f172a;
+        --ba-text-muted: #334155;
+        --ba-primary: #b45309;
+        --ba-accent: #047857;
+        --ba-card-shadow: none;
+      }
+      html, body { background: #ffffff !important; color: #0f172a !important; }
+      body { display: block !important; min-height: 0 !important; font-size: 10.5pt; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; animation: none !important; transition: none !important; }
+
+      header, footer, .stepper, .preset-bar, .floating-dock, .no-print, .btn,
+      .audit-modal-backdrop, #step3FallbackBanner, #step4FallbackBanner, #panel4 > .panel-heading { display: none !important; }
+      main, .container { max-width: none !important; width: auto !important; margin: 0 !important; padding: 0 !important; }
+
+      .panel { display: none !important; }
+      #panel4 { display: block !important; background: none !important; border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
+
+      .print-only { display: block !important; }
+
+      .scrutiny-grid { display: block !important; }
+      .scrutiny-card {
+        break-before: page; page-break-before: always;
+        background: #ffffff !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important;
+        box-shadow: none !important; padding: 10mm 8mm !important; margin: 0 !important; gap: 4mm !important;
+      }
+      .scrutiny-header { break-after: avoid; border-bottom: 2px solid #b45309 !important; }
+      .scrutiny-header > div:first-child > div:first-child { font-size: 14pt !important; color: #0f172a !important; }
+      .candidate-score-badge { background: #ecfdf5 !important; border: 2px solid #047857 !important; color: #047857 !important; }
+      .kundali-wrapper { break-inside: avoid; padding: 2mm 0 !important; }
+      .kundali-wrapper svg { width: 70mm !important; height: 70mm !important; }
+      .kundali-wrapper svg text[fill="#fbbf24"], .kundali-wrapper svg text[fill="#eab308"] { fill: #a16207; }
+      .kundali-wrapper svg text[fill="#38bdf8"] { fill: #0369a1; }
+      .kundali-wrapper svg text[fill="#94a3b8"] { fill: #475569; }
+      .panchanga-table { font-size: 9pt !important; }
+      .panchanga-table tr { break-inside: avoid; page-break-inside: avoid; }
+      .panchanga-table td { border-bottom: 1px solid #e2e8f0 !important; }
+      .action-checklist { break-inside: avoid; background: #fffbeb !important; border: 1px solid #f59e0b !important; }
       .tag { border: 1px solid #ccc !important; color: #333 !important; }
-      .print-page-1 { break-after: page; page-break-after: always; }
+
+      /* Cover, summary and closing note */
+      .print-report-cover { border-bottom: 3px solid #b45309; padding-bottom: 5mm; margin-bottom: 6mm; }
+      .print-report-cover .pr-institute { font-size: 10pt; color: #b45309; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+      .print-report-cover .pr-title { font-size: 20pt; font-weight: 800; color: #0f172a; margin: 2mm 0 1mm; }
+      .print-report-cover .pr-subtitle { font-size: 10pt; color: #334155; }
+      .pr-section-title { font-size: 12pt; font-weight: 700; color: #0f172a; margin: 6mm 0 3mm; border-left: 4px solid #b45309; padding-left: 3mm; }
+      .pr-details { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+      .pr-details th { text-align: left; width: 32%; color: #334155; font-weight: 600; padding: 1.6mm 2mm; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+      .pr-details td { padding: 1.6mm 2mm; border-bottom: 1px solid #e2e8f0; color: #0f172a; }
+      .pr-summary { width: 100%; border-collapse: collapse; font-size: 9pt; }
+      .pr-summary th { background: #0f172a !important; color: #ffffff !important; text-align: left; padding: 2mm; font-weight: 600; }
+      .pr-summary td { padding: 2mm; border-bottom: 1px solid #e2e8f0; color: #0f172a; }
+      .pr-summary tr:nth-child(even) td { background: #f8fafc !important; }
+      .pr-summary td.pr-score { font-weight: 800; color: #047857; text-align: right; }
+      .pr-summary th.pr-score { text-align: right; }
+      .pr-note { font-size: 8.5pt; color: #475569; line-height: 1.45; margin-top: 6mm; padding-top: 3mm; border-top: 1px solid #cbd5e1; }
+      .print-report-closing { break-before: avoid; }
     }
     /* Internal Logic Audit Modal */
     .audit-modal-backdrop {
@@ -1416,6 +1495,16 @@
         </div>
         <div class="rule-content" id="accVedic">
           <label class="rule-toggle-item">
+            <select id="sunriseConvention" class="form-control" style="max-width: 15rem;">
+              <option value="limb" selected>Upper limb + refraction</option>
+              <option value="centre">Disc centre, no refraction</option>
+            </select>
+            <div>
+              <div class="rule-name">Sunrise Convention</div>
+              <div class="rule-hint">Sets sunrise/sunset for Rahu Kalam, Gulika, Yamagandam and the Kollam month start. Upper limb matches most published panchangams; disc centre is about 3 min later.</div>
+            </div>
+          </label>
+          <label class="rule-toggle-item">
             <input type="checkbox" id="omitRahuKalam">
             <div>
               <div class="rule-name">Omit Rahu Kalam</div>
@@ -1453,8 +1542,8 @@
           <label class="rule-toggle-item">
             <input type="checkbox" id="omitVadhaTara">
             <div>
-              <div class="rule-name">Omit Vadha (7th) Tara Veto</div>
-              <div class="rule-hint">7th Nakshatra cycle from Janma; traditionally causes operational dissolution.</div>
+              <div class="rule-name">Omit Adverse Tara (Vipat 3 / Pratyak 5 / Vadha 7) Veto</div>
+              <div class="rule-hint">1st cycle from Janma: all three rejected; 2nd/3rd cycle: only Vipat pada 1, Pratyak pada 4, Vadha pada 3 (Muhurta Chintamani).</div>
             </div>
           </label>
           <label class="rule-toggle-item">
@@ -1593,8 +1682,7 @@
             🌐 Language: English
           </button>
           <button class="btn btn-secondary btn-sm" onclick="openInternalLogicAuditModal()">🔍 Internal Logic Audit</button>
-          <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ Print 2-Page Executive Dossier</button>
-          <button class="btn btn-secondary btn-sm" onclick="exportDossierJson()">💾 Export JSON Archive</button>
+          <button class="btn btn-secondary btn-sm" onclick="printExecutiveDossier()">🖨️ Print Executive Dossier</button>
           <button type="button" class="btn btn-secondary btn-sm" id="btnRedoStep4" onclick="retrySwissEphemerisAndRecalculate()" title="Re-attempt Swiss Ephemeris connection and redo calculations">🔄 Redo Calculations</button>
         </div>
       </div>
@@ -1603,11 +1691,15 @@
       <div id="step4FallbackBanner" style="display: none; border-radius: 8px; padding: 0.85rem 1.15rem; margin-bottom: 1.25rem; font-size: 0.875rem; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
       </div>
 
+      <div class="print-only" id="printReportCover"></div>
+
       <div class="scrutiny-grid" id="scrutinyContainer">
         <!-- Injected Deep-Dive Cards -->
       </div>
 
-      <div style="display: flex; justify-content: flex-start; margin-top: 2rem;">
+      <div class="print-only print-report-closing" id="printReportClosing"></div>
+
+      <div class="no-print" style="display: flex; justify-content: flex-start; margin-top: 2rem;">
         <button class="btn btn-secondary" onclick="goToStep(3)">← Back to Candidate Shortlist</button>
       </div>
     </div>
@@ -2196,6 +2288,12 @@
     // HIGH-PRECISION DYNAMIC ASTRONOMICAL EPHEMERIS (ZERO HARDCODED DATA)
     // =========================================================================
 
+    // Numeric data-* attribute with a default; keeps legitimate zeros (UTC, equator, Greenwich)
+    function attrNum(el, name, def) {
+      const v = el ? parseFloat(el.getAttribute(name)) : NaN;
+      return Number.isFinite(v) ? v : def;
+    }
+
     function getJulianDate(year, month, day, hour = 0, minute = 0, tz = 5.5) {
       const utHours = hour + minute / 60 - tz;
       let y = year, m = month;
@@ -2319,9 +2417,17 @@
       return ((lonJ2000 + precession) % 360 + 360) % 360;
     }
 
-    // Sunrise / sunset in local decimal hours (upper limb with standard refraction, h0 = -0.833 deg)
+    // Sunrise convention from Step 2: upper limb with standard refraction (-0.833 deg, most published
+    // panchangams) or disc centre without refraction (0 deg, some traditional siddhantic panchangams)
+    function getSunriseAltitude() {
+      const el = typeof document !== "undefined" ? document.getElementById("sunriseConvention") : null;
+      return el && el.value === "centre" ? 0 : -0.833;
+    }
+
+    // Sunrise / sunset in local decimal hours for the selected convention
     function getSunriseSunset(y, m, d, tz, lat, lon) {
       const rad = Math.PI / 180;
+      const h0 = getSunriseAltitude();
       const solve = (guessLocalHour, rising) => {
         let jd = getJulianDate(y, m, d, guessLocalHour, 0, tz);
         for (let i = 0; i < 5; i++) {
@@ -2330,7 +2436,7 @@
           const eps = (23.4392911 - 0.0130042 * T) * rad;
           const ra = Math.atan2(Math.cos(eps) * Math.sin(lam), Math.cos(lam)) / rad;
           const dec = Math.asin(Math.sin(eps) * Math.sin(lam));
-          const cosH0 = (Math.sin(-0.833 * rad) - Math.sin(lat * rad) * Math.sin(dec)) / (Math.cos(lat * rad) * Math.cos(dec));
+          const cosH0 = (Math.sin(h0 * rad) - Math.sin(lat * rad) * Math.sin(dec)) / (Math.cos(lat * rad) * Math.cos(dec));
           if (cosH0 < -1 || cosH0 > 1) return null;
           const H0 = Math.acos(cosH0) / rad * (rising ? -1 : 1);
           const gmst = 280.46061837 + 360.98564736629 * (jd - 2451545.0);
@@ -2345,6 +2451,109 @@
       const set = solve(18, false);
       if (rise === null || set === null) return { sunrise: 6.0, sunset: 18.0, isApprox: true };
       return { sunrise: rise, sunset: set, isApprox: false };
+    }
+
+    // Sidereal (Lahiri) Sun longitude at a UT Julian day: Swiss Ephemeris when active, internal otherwise
+    function getSiderealSunAt(jd) {
+      const swe = SWISSEPH_CONFIG.instance;
+      if (swe && SWISSEPH_CONFIG.status === "READY_SWISSEPH" && SWISSEPH_CONFIG.mode !== "INTERNAL_ONLY") {
+        try {
+          const v = Number(swe.calc_ut(jd, SWISSEPH_CONFIG.SE_SUN, SWISSEPH_CONFIG.SEFLG_SWIEPH | SWISSEPH_CONFIG.SEFLG_SIDEREAL)[0]);
+          if (Number.isFinite(v)) return ((v % 360) + 360) % 360;
+        } catch (e) { /* fall through to internal */ }
+      }
+      return ((getSunLongitude(jd) - getLahiriAyanamsha(jd)) % 360 + 360) % 360;
+    }
+
+    // UT Julian day of the most recent sidereal Sun sign ingress (Sankranti) at or before jd
+    function findPreviousSankranti(jd) {
+      const target = Math.floor(getSiderealSunAt(jd) / 30) * 30;
+      let t = jd - (getSiderealSunAt(jd) - target) / 0.9856;
+      for (let i = 0; i < 6; i++) {
+        const diff = ((getSiderealSunAt(t) - target) % 360 + 540) % 360 - 180;
+        t -= diff / 0.9856;
+        if (Math.abs(diff) < 1e-6) break;
+      }
+      return t;
+    }
+
+    // Hours between jd and the nearest Sankranti (previous or next)
+    function getHoursFromSankranti(jd) {
+      const prev = findPreviousSankranti(jd);
+      const next = findPreviousSankranti(prev + 33);
+      return Math.min(jd - prev, next - jd) * 24;
+    }
+
+    // Kerala (Kollam) solar calendar date for a local civil date. A month begins on the day of
+    // Sankranti if the ingress falls within the first 3/5 of that day's daytime, otherwise the next day.
+    function getKollamDate(y, m, d, tz, lat, lon) {
+      const civilDayNumber = (jdUT) => Math.floor(jdUT + tz / 24 + 0.5);
+      const today = civilDayNumber(getJulianDate(y, m, d, 12, 0, tz));
+      const monthStartDay = (sankJd) => {
+        const dayNum = civilDayNumber(sankJd);
+        const date = new Date((dayNum - 2440588) * 86400000);
+        const sun = getSunriseSunset(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate(), tz, lat, lon);
+        const localHour = (sankJd + tz / 24 + 0.5 - dayNum) * 24;
+        const cutoff = sun.sunrise + 0.6 * (sun.sunset - sun.sunrise);
+        return localHour < cutoff ? dayNum : dayNum + 1;
+      };
+      let sank = findPreviousSankranti(getJulianDate(y, m, d, 23, 59, tz));
+      let start = monthStartDay(sank);
+      if (start > today) {
+        sank = findPreviousSankranti(sank - 1);
+        start = monthStartDay(sank);
+      }
+      const signIdx = Math.floor(getSiderealSunAt(sank + 0.05) / 30) % 12;
+      return { monthIdx: (signIdx - 4 + 12) % 12, day: today - start + 1, sankrantiJd: sank };
+    }
+
+    // Western void-of-course Moon (tropical signs): true when no Ptolemaic aspect
+    // (0/60/90/120/180 deg) to Sun..Saturn perfects before the Moon leaves its current sign
+    function isMoonVoidOfCourse(jd) {
+      const m0 = getMoonLongitude(jd);
+      const remaining = 30 - (m0 % 30);
+      let tExit = jd + remaining / 13.176;
+      for (let i = 0; i < 4; i++) {
+        const over = ((getMoonLongitude(tExit) - (m0 + remaining)) % 360 + 540) % 360 - 180;
+        tExit -= over / 13.176;
+      }
+      const bodies = [
+        (t) => getSunLongitude(t),
+        (t) => getGeocentricLongitude("mercury", t),
+        (t) => getGeocentricLongitude("venus", t),
+        (t) => getGeocentricLongitude("mars", t),
+        (t) => getGeocentricLongitude("jupiter", t),
+        (t) => getGeocentricLongitude("saturn", t)
+      ];
+      const ASPECTS = [0, 60, 90, 120, 180, 240, 270, 300];
+      for (const lonAt of bodies) {
+        const p0 = lonAt(jd);
+        const p1 = lonAt(tExit);
+        const sep0 = ((m0 - p0) % 360 + 360) % 360;
+        const planetMove = ((p1 - p0) % 360 + 540) % 360 - 180;
+        const sepAdvance = remaining - planetMove;
+        for (const a of ASPECTS) {
+          const toGo = ((a - sep0) % 360 + 360) % 360;
+          if (toGo <= sepAdvance) return false;
+        }
+      }
+      return true;
+    }
+
+    // Classical combustion (Astangata) orbs from the Sun, Surya Siddhanta (direct motion)
+    const COMBUSTION_ORBS = { mercury: 14, venus: 10, mars: 17, jupiter: 11, saturn: 15 };
+
+    // Tarabala per Muhurta Chintamani: Vipat (3), Pratyak (5) and Vadha (7) are rejected in the
+    // 1st paryaya; in the 2nd/3rd only Vipat pada 1, Pratyak pada 4 and Vadha pada 3 are rejected
+    const TARA_BONUS = { 2: 18, 4: 12, 6: 14, 8: 12, 9: 16 };
+    const TARA_VETO_PADA = { 3: 1, 5: 4, 7: 3 };
+    function evaluateTara(taraIdx, taraCycle, pada) {
+      if (TARA_BONUS[taraIdx]) return { veto: false, delta: TARA_BONUS[taraIdx], color: "green" };
+      if (taraIdx === 1) return { veto: false, delta: taraCycle === 1 ? -8 : -5, color: "amber" };
+      if (taraCycle === 1 || pada === TARA_VETO_PADA[taraIdx]) {
+        return { veto: true, delta: taraIdx === 7 ? -25 : -20, color: "red" };
+      }
+      return { veto: false, delta: taraIdx === 7 ? -10 : -6, color: "amber" };
     }
 
     function getPlanetaryPositions(jd, ayanamsha) {
@@ -2386,10 +2595,13 @@
       let ascTropical = Math.atan2(y, x) / rad;
       ascTropical = (ascTropical + 360) % 360;
       const ascNirayana = (ascTropical - ayanamsha + 360) % 360;
+      // Midheaven (Placidus 10th cusp): tan(MC) = tan(RAMC) / cos(eps)
+      const mcTropical = (Math.atan2(Math.sin(RAMC * rad), Math.cos(RAMC * rad) * Math.cos(eps)) / rad + 360) % 360;
       return {
         longitude: ascNirayana,
         rashiIdx: Math.floor(ascNirayana / 30),
-        degInRashi: ascNirayana % 30
+        degInRashi: ascNirayana % 30,
+        mcLongitude: (mcTropical - ayanamsha + 360) % 360
       };
     }
 
@@ -2401,8 +2613,12 @@
       status: "CHECKING", // "READY_SWISSEPH", "FALLBACK_INTERNAL", "CHECKING"
       mode: "AUTO", // "AUTO" (SwissEph default with fallback), "SWISSEPH_ONLY", "INTERNAL_ONLY"
       instance: null,
-      // swisseph-wasm (prolaxu) pinned build; default export is the SwissEph class
-      MODULE_URL: "https://cdn.jsdelivr.net/npm/swisseph-wasm@0.1.0/src/swisseph.js",
+      // swisseph-wasm (prolaxu) 0.1.0; default export is the SwissEph class. The vendored copy is
+      // tried first (works offline over http/https); the pinned CDN copy covers file:// and partial deploys.
+      MODULE_URLS: [
+        "./vendor/swisseph-wasm/src/swisseph.js",
+        "https://cdn.jsdelivr.net/npm/swisseph-wasm@0.1.0/src/swisseph.js"
+      ],
       SEFLG_SWIEPH: 2,
       SEFLG_SIDEREAL: 65536,
       SE_SIDM_LAHIRI: 1,
@@ -2426,27 +2642,25 @@
         return;
       }
 
-      // 2. Attempt dynamic WASM import from ESM CDN if online
-      try {
-        if (typeof window !== "undefined" && window.navigator && window.navigator.onLine !== false) {
-          const mod = await import(SWISSEPH_CONFIG.MODULE_URL).catch((e) => {
-            console.warn("Swiss Ephemeris module import failed:", e);
-            return null;
-          });
+      // 2. Load the WASM module: vendored copy first, then the pinned CDN copy
+      for (const url of SWISSEPH_CONFIG.MODULE_URLS) {
+        try {
+          const mod = await import(url);
           if (mod && typeof mod.default === "function") {
             const inst = new mod.default();
             await inst.initSwissEph();
             if (typeof inst.calc_ut === "function") {
               inst.set_sid_mode(SWISSEPH_CONFIG.SE_SIDM_LAHIRI, 0, 0);
               SWISSEPH_CONFIG.instance = inst;
+              SWISSEPH_CONFIG.loadedFrom = url;
               SWISSEPH_CONFIG.status = "READY_SWISSEPH";
               updateEphemerisUI();
               return;
             }
           }
+        } catch (err) {
+          console.warn("Swiss Ephemeris could not load from " + url + ":", err);
         }
-      } catch (err) {
-        console.warn("Swiss Ephemeris WASM module loader note:", err);
       }
 
       // 3. Graceful failover to high-precision internal ephemeris
@@ -2782,6 +2996,7 @@
           const ascTrop = Number(hRes.ascmc[0]);
           if (!Number.isFinite(ascTrop)) throw new Error("houses returned non-numeric ascendant");
           const ascLong = (ascTrop - ayanamsha + 360000) % 360;
+          const mcLong = (Number(hRes.ascmc[1]) - ayanamsha + 360000) % 360;
 
           return {
             engineName: "Swiss Ephemeris (GNU AGPL-3.0)",
@@ -2793,7 +3008,8 @@
             asc: {
               longitude: ascLong,
               rashiIdx: Math.floor(ascLong / 30),
-              degInRashi: ascLong % 30
+              degInRashi: ascLong % 30,
+              mcLongitude: mcLong
             }
           };
         } catch (err) {
@@ -2916,6 +3132,16 @@
     // In-House Offline Ephemeris & Dynamic Fast Search Engine
     let generatedCandidates = [];
     let selectedCandidates = new Set();
+    // Candidates rejected while finalising in Step 4; remembered in the Step 3 shortlist until re-selected
+    const rejectedCandidates = new Set();
+
+    function createRejectedTag() {
+      const tag = document.createElement("span");
+      tag.className = "tag tag-rejected";
+      tag.textContent = "✕ Rejected in Step 4";
+      tag.title = "You rejected this muhurtham while finalising the dossier. Select it again to restore it.";
+      return tag;
+    }
 
     function calculateMuhurthamFast() {
       const startStr = document.getElementById("dateStart").value;
@@ -2932,9 +3158,9 @@
       const tobStr = document.getElementById("promoterTob").value || "09:30";
       const birthSelect = document.getElementById("birthPlace");
       const birthOpt = birthSelect.options[birthSelect.selectedIndex];
-      const birthLat = parseFloat(birthOpt.getAttribute("data-lat")) || 8.5241;
-      const birthLon = parseFloat(birthOpt.getAttribute("data-lon")) || 76.9366;
-      const birthTz = parseFloat(birthOpt.getAttribute("data-tz")) || 5.5;
+      const birthLat = attrNum(birthOpt, "data-lat", 8.5241);
+      const birthLon = attrNum(birthOpt, "data-lon", 76.9366);
+      const birthTz = attrNum(birthOpt, "data-tz", 5.5);
 
       // Compute Promoter's Janma Nakshatra Dynamically (Swiss Ephemeris default / internal fallback)
       const dobParts = dobStr.split("-").map(Number);
@@ -2946,9 +3172,9 @@
       // Read Business Place Coordinates
       const busSelect = document.getElementById("businessPlace");
       const busOpt = busSelect.options[busSelect.selectedIndex];
-      const busLat = parseFloat(busOpt.getAttribute("data-lat")) || 8.5241;
-      const busLon = parseFloat(busOpt.getAttribute("data-lon")) || 76.9366;
-      const busTz = parseFloat(busOpt.getAttribute("data-tz")) || 5.5;
+      const busLat = attrNum(busOpt, "data-lat", 8.5241);
+      const busLon = attrNum(busOpt, "data-lon", 76.9366);
+      const busTz = attrNum(busOpt, "data-tz", 5.5);
 
       // Parse YYYY-MM-DD as a local calendar date (new Date("YYYY-MM-DD") is UTC and shifts the day west of UTC)
       const [sy, sm, sd] = startStr.split("-").map(Number);
@@ -2960,6 +3186,7 @@
 
       generatedCandidates = [];
       selectedCandidates.clear();
+      rejectedCandidates.clear();
 
       // Read 4 Active Astrology Systems from Step 1
       const sysVedic = document.getElementById("sysVedic") ? document.getElementById("sysVedic").checked : true;
@@ -3007,6 +3234,9 @@
         const yamaStartHour = sunriseHour + (yamaOctants[dayOfWeek] - 1) * octantDuration;
         const yamaEndHour = yamaStartHour + octantDuration;
 
+        // Kollam (Kerala solar) date for this civil day
+        const kollam = getKollamDate(y, m, dt, busTz, busLat, busLon);
+
         // Candidate time slots evaluated for this day with 1-minute astronomical precision:
         // 1. 08:30 - 08:58 (Evaluated at 08:55 AM: Prime Morning Dhanu Lagna, Simha Navamsha, Pre-Gulika on Thursday)
         // 2. 08:59 - 09:12 (Evaluated at 09:01 AM: Prime Morning Dhanu Lagna, Royal Simha Navamsha, 14 min safely clear of Gulika)
@@ -3039,8 +3269,8 @@
           // Real Sun & Kollam Solar Month
           const sunLong = planets.sun;
           const sunRashiIdx = Math.floor(sunLong / 30);
-          const kollamMonthIdx = (sunRashiIdx - 4 + 12) % 12;
-          const kollamDay = Math.floor(sunLong % 30) + 1;
+          const kollamMonthIdx = kollam.monthIdx;
+          const kollamDay = kollam.day;
 
           // Real Moon & Nithya Nakshatra
           const moonLong = planets.moon;
@@ -3052,6 +3282,7 @@
           const taraOffset = (nakshatraIdx - promoterJanmaNakIdx + 27) % 27;
           const taraIdx = (taraOffset % 9) + 1;
           const taraCycle = Math.floor(taraOffset / 9) + 1;
+          const taraEval = evaluateTara(taraIdx, taraCycle, nakshatraPada);
 
           // Real Rahu Kalam, Gulika Kalam & Yamagandam Overlap Checks
           const winStartDecimal = win.hourStart + win.minStart / 60;
@@ -3060,9 +3291,9 @@
           const hasGulikaOverlap = (winStartDecimal < gulikaEndHour && winEndDecimal > gulikaStartHour);
           const hasYamaOverlap = (winStartDecimal < yamaEndHour && winEndDecimal > yamaStartHour);
 
-          // Real Masa Sankramana Check (Sun entering Rashi cusp: last 0.5 deg or first 0.5 deg)
+          // Masa Sankramana: within 16 ghatikas (6 h 24 min) of the Sun's sidereal sign ingress
           const degInSunSign = sunLong % 30;
-          const isMasaSankramana = (degInSunSign >= 29.5) || (degInSunSign <= 0.5);
+          const isMasaSankramana = getHoursFromSankranti(jd) <= 6.4;
 
           // Real BaZi Personal Breaker (Liu Chong clash with Promoter's Birth Year Earthly Branch)
           const promoterBirthYear = dobParts[0] || 1992;
@@ -3081,8 +3312,8 @@
           const isAshtamaPure = planetsIn8th.length === 0;
           const hasMaleficIn8th = maleficsIn8th.length > 0;
 
-          // Real KP 10th Cuspal Sub-Lord & Negation Check
-          const tenthCuspLong = (asc.longitude + 270) % 360;
+          // KP 10th Cuspal Sub-Lord & Negation Check (Placidus 10th cusp = Midheaven)
+          const tenthCuspLong = asc.mcLongitude;
           const kpResult = getKPSubLord(tenthCuspLong, asc.rashiIdx);
           // Compare house numbers, not substrings ("12".includes("2") was a false match)
           const kpHouses = kpResult.signifiedHouses.split(", ").map(Number);
@@ -3091,25 +3322,26 @@
 
           // Real Western Aspect & VoC Check
           const westAspect = getWesternAspect(moonLong, sunLong, planets.jupiter, planets.venus);
-          const isVoc = (moonLong % 30) >= 27;
+          const isVoc = isMoonVoidOfCourse(jd);
 
-          // Real Combustion (Astangata) Check for Core Business Karaka
-          let karakaLong = planets.jupiter;
-          if (nature === "TECH_AI") karakaLong = planets.mercury;
-          else if (nature === "MEDIA_CREATIVE" || nature === "HOSPITALITY_TOURISM") karakaLong = planets.venus;
-          else if (nature === "MANUFACTURING_HEAVY") karakaLong = planets.mars;
-          else if (nature === "REAL_ESTATE_INFRA") karakaLong = planets.saturn;
+          // Combustion (Astangata) Check for Core Business Karaka, using that planet's classical orb
+          let karakaKey = "jupiter";
+          if (nature === "TECH_AI") karakaKey = "mercury";
+          else if (nature === "MEDIA_CREATIVE" || nature === "HOSPITALITY_TOURISM") karakaKey = "venus";
+          else if (nature === "MANUFACTURING_HEAVY") karakaKey = "mars";
+          else if (nature === "REAL_ESTATE_INFRA") karakaKey = "saturn";
+          const karakaLong = planets[karakaKey];
 
           let sunDiff = Math.abs(sunLong - karakaLong);
           if (sunDiff > 180) sunDiff = 360 - sunDiff;
-          const isKarakaCombust = sunDiff < 8.5; // Within 8.5 degrees of Sun is Astangata
+          const isKarakaCombust = sunDiff < COMBUSTION_ORBS[karakaKey];
 
           // Real Qi Men Dun Jia (QMDJ)
           const qmdjDoor = getQMDJ(jd, evalHour);
 
           // Candidate Pruning Conditioned on Active Astrology Systems
           if (sysVedic) {
-            if (taraIdx === 7 && !omitVadha && !isSingleDay) return;
+            if (taraEval.veto && !omitVadha && !isSingleDay) return;
             if (hasRahuOverlap && !omitRahu) return;
             if (hasGulikaOverlap && !omitGulika) return;
             if (hasYamaOverlap && !omitYama && !isSingleDay) return;
@@ -3136,13 +3368,9 @@
 
           // 1. Vedic Consensus Contributions
           if (sysVedic) {
-            // Tarabalam Score Impact
-            if (taraIdx === 2) { score += 18; consensusBadges.push("Sampat Tara (+18)"); }
-            else if (taraIdx === 4) { score += 12; consensusBadges.push("Kshema Tara (+12)"); }
-            else if (taraIdx === 6) { score += 14; consensusBadges.push("Sadhaka Tara (+14)"); }
-            else if (taraIdx === 8) { score += 12; consensusBadges.push("Mitra Tara (+12)"); }
-            else if (taraIdx === 9) { score += 16; consensusBadges.push("Parama Mitra (+16)"); }
-            else if (taraIdx === 7) { score -= 25; }
+            // Tarabalam Score Impact (cycle/pada aware, see evaluateTara)
+            score += taraEval.delta;
+            if (taraEval.delta > 0) consensusBadges.push(`${TARA_NAMES[taraIdx - 1]} Tara (+${taraEval.delta})`);
 
             // Ashtama Shuddhi Impact
             if (isAshtamaPure) {
@@ -3255,6 +3483,8 @@
             tara: TARA_NAMES[taraIdx - 1],
             taraIdx: taraIdx,
             taraCycle: taraCycle,
+            taraColor: taraEval.color,
+            taraVeto: taraEval.veto,
             kollamMonth: KOLLAM_MONTHS[kollamMonthIdx],
             kollamMonthIdx: kollamMonthIdx,
             kollamDay: kollamDay,
@@ -3293,8 +3523,12 @@
             kpSubLordDescMl: `കെ.പി. സിസ്റ്റം പ്രകാരം പത്താം ഉപനാഥനായ ${kpResult.subLordMl} ${kpResult.signifiedHouses} ഭാവങ്ങളുമായി ശുഭബന്ധം പുലർത്തുന്നു.`,
             westernAspectInfo: westAspect.text,
             westernAspectInfoMl: westAspect.textMl,
-            westernAspectDesc: `Ptolemaic angular aspect: ${westAspect.text}. Moon is direct and active.`,
-            westernAspectDescMl: `പാശ്ചാത്യ തിരഞ്ഞെടുപ്പ് പ്രകാരം ചന്ദ്രന്റെ അനുകൂല ദൃഷ്ടി. ചന്ദ്രൻ ശൂന്യപഥത്തിലല്ല.`,
+            westernAspectDesc: isVoc
+              ? `Ptolemaic angular aspect: ${westAspect.text}. Moon is void of course (no aspect perfects before it leaves its sign).`
+              : `Ptolemaic angular aspect: ${westAspect.text}. Moon completes an aspect before leaving its sign (not void of course).`,
+            westernAspectDescMl: isVoc
+              ? `പാശ്ചാത്യ തിരഞ്ഞെടുപ്പ് പ്രകാരം ചന്ദ്രൻ ശൂന്യപഥത്തിലാണ് (Void of Course).`
+              : `പാശ്ചാത്യ തിരഞ്ഞെടുപ്പ് പ്രകാരം ചന്ദ്രന്റെ അനുകൂല ദൃഷ്ടി. ചന്ദ്രൻ ശൂന്യപഥത്തിലല്ല.`,
             qmdjInfo: `${qmdjDoor.name} in ${qmdjDoor.dir}`,
             qmdjInfoMl: `${qmdjDoor.nameMl} (${qmdjDoor.dir})`,
             qmdjDesc: `${qmdjDoor.nature}. Direction ${qmdjDoor.dir} brings strategic resonance.`,
@@ -3573,7 +3807,7 @@
           group.slots.forEach(cand => {
             const isSelected = selectedCandidates.has(cand.id);
             const slotRow = document.createElement("div");
-            slotRow.className = "day-slot-row" + (isSelected ? " selected" : "");
+            slotRow.className = "day-slot-row" + (isSelected ? " selected" : "") + (rejectedCandidates.has(cand.id) ? " rejected" : "");
             slotRow.id = `card_${cand.id}`;
 
             // Left
@@ -3601,6 +3835,7 @@
             const title = document.createElement("div");
             title.className = "candidate-window";
             title.textContent = cand.targetTime ? `⏰ ${cand.timeWindow} (Target: ${cand.targetTime})` : `⏰ ${cand.timeWindow} (Local Time)`;
+            if (rejectedCandidates.has(cand.id)) title.appendChild(createRejectedTag());
 
             const meta = document.createElement("div");
             meta.className = "candidate-meta";
@@ -3664,7 +3899,7 @@
       // Default Recommendation Mode: Ranked list of candidates
       generatedCandidates.slice(0, 25).forEach((cand) => {
         const card = document.createElement("div");
-        card.className = "candidate-card" + (selectedCandidates.has(cand.id) ? " selected" : "");
+        card.className = "candidate-card" + (selectedCandidates.has(cand.id) ? " selected" : "") + (rejectedCandidates.has(cand.id) ? " rejected" : "");
         card.id = `card_${cand.id}`;
 
         // Left Container
@@ -3691,6 +3926,7 @@
         const title = document.createElement("div");
         title.className = "candidate-window";
         title.textContent = cand.targetTime ? `${cand.dateDisplay} • ${cand.timeWindow} (Target: ${cand.targetTime})` : `${cand.dateDisplay} • ${cand.timeWindow}`;
+        if (rejectedCandidates.has(cand.id)) title.appendChild(createRejectedTag());
 
         const meta = document.createElement("div");
         meta.className = "candidate-meta";
@@ -3881,11 +4117,13 @@
             slots.forEach(slot => {
               const pill = document.createElement("div");
               const isSelected = selectedCandidates.has(slot.id);
-              pill.className = "calendar-slot-pill" + (isSelected ? " selected" : "");
-              pill.title = `${slot.dateDisplay} • ${slot.timeWindow}\nLagna: ${slot.lagna} | Moon: ${slot.nakshatra} (${slot.tara} Tara)\nScore: ${slot.score}% — Click to select/remove`;
+              const isRejected = rejectedCandidates.has(slot.id);
+              pill.className = "calendar-slot-pill" + (isSelected ? " selected" : "") + (isRejected ? " rejected" : "");
+              pill.title = `${slot.dateDisplay} • ${slot.timeWindow}\nLagna: ${slot.lagna} | Moon: ${slot.nakshatra} (${slot.tara} Tara)\nScore: ${slot.score}% — Click to select/remove` +
+                (isRejected ? "\n✕ Rejected in Step 4 (select again to restore)" : "");
 
               const checkSpan = document.createElement("span");
-              checkSpan.textContent = isSelected ? "✓" : "○";
+              checkSpan.textContent = isSelected ? "✓" : (isRejected ? "✕" : "○");
               checkSpan.style.color = isSelected ? "var(--ba-primary)" : "var(--ba-text-muted)";
               checkSpan.style.fontWeight = "bold";
 
@@ -3930,14 +4168,29 @@
           return;
         }
         selectedCandidates.add(id);
+        rejectedCandidates.delete(id);
       }
       renderCurrentStep3View();
     }
 
     function autoSelectTop5() {
       selectedCandidates.clear();
-      generatedCandidates.slice(0, 5).forEach(c => selectedCandidates.add(c.id));
+      generatedCandidates.filter(c => !rejectedCandidates.has(c.id)).slice(0, 5).forEach(c => selectedCandidates.add(c.id));
       renderCurrentStep3View();
+    }
+
+    // Step 4: drop a muhurtham from the dossier while finalising; Step 3 remembers the rejection
+    function rejectFromDossier(id) {
+      selectedCandidates.delete(id);
+      rejectedCandidates.add(id);
+      renderCurrentStep3View();
+      if (selectedCandidates.size === 0) {
+        const container = document.getElementById("scrutinyContainer");
+        if (container) container.textContent = "";
+        goToStep(3);
+        return;
+      }
+      renderScrutinyCards();
     }
 
     function clearSelections() {
@@ -4013,8 +4266,21 @@
         scoreBadge.className = "candidate-score-badge high";
         scoreBadge.textContent = `${cand.score}%`;
 
+        const headerRight = document.createElement("div");
+        headerRight.className = "scrutiny-header-actions";
+        const rejectBtn = document.createElement("button");
+        rejectBtn.type = "button";
+        rejectBtn.className = "btn btn-secondary btn-sm btn-reject";
+        rejectBtn.textContent = isMl ? "✕ ഒഴിവാക്കുക" : "✕ Reject";
+        rejectBtn.title = isMl
+          ? "ഈ മുഹൂർത്തം ഡോസിയറിൽ നിന്ന് ഒഴിവാക്കുക (ഘട്ടം 3-ൽ രേഖപ്പെടുത്തും)"
+          : "Remove this muhurtham from the dossier. Step 3 will remember it as rejected.";
+        rejectBtn.onclick = () => rejectFromDossier(cand.id);
+        headerRight.appendChild(scoreBadge);
+        headerRight.appendChild(rejectBtn);
+
         header.appendChild(titleBox);
-        header.appendChild(scoreBadge);
+        header.appendChild(headerRight);
 
         // SVG Kundali (Traditional South Indian / Kerala Chart rendering safely via DOM with Zero Hardcoding)
         const kundaliWrapper = document.createElement("div");
@@ -4043,9 +4309,7 @@
           sysBaZi: document.getElementById("sysBaZi") ? document.getElementById("sysBaZi").checked : true
         };
 
-        const isGoodTara = [2, 4, 6, 8, 9].includes(cand.taraIdx);
-        const isNeutralTara = [1, 5].includes(cand.taraIdx);
-        const isVadhaTara = (cand.taraIdx === 7);
+        const taraEval = evaluateTara(cand.taraIdx, cand.taraCycle, cand.nakshatraPada);
 
         const rows = [
           {
@@ -4070,7 +4334,7 @@
           },
           {
             key: isMl ? "നിത്യ നക്ഷത്രം" : "Nithya Nakshatra",
-            val: `${nakshatraDisplay} (പാദം ${cand.nakshatraPada})`,
+            val: `${nakshatraDisplay} (${isMl ? "പാദം" : "Pada"} ${cand.nakshatraPada})`,
             desc: isMl
               ? `മുഹൂർത്ത സമയത്ത് വിരാജിക്കുന്ന ചന്ദ്ര നക്ഷത്രം. സംരംഭത്തിന് ജനപിന്തുണയും സൽകീർത്തിയും പ്രദാനം ചെയ്യുന്നു.`
               : `Active lunar constellation presiding over the muhurtham. Imparts divine mental clarity and public goodwill.`,
@@ -4094,9 +4358,9 @@
                  cand.tara === "Mitra" ? "8th Tara (Mitra): Friendly commercial alliances, vendor goodwill, and harmonious customer retention." :
                  cand.tara === "Parama Mitra" ? "9th Tara (Parama Mitra): Visionary investor backing, institutional partnerships, and supreme commercial prestige." :
                  "Favorable Tarabalam granting continuous psychological resilience and energetic support to the promoter."),
-            color: isGoodTara ? "green" : (isNeutralTara ? "amber" : "red"),
-            isOmitted: isVadhaTara && Boolean(o.omitVadha),
-            omittedLabel: isMl ? "വധതാര ഒഴിവാക്കപ്പെട്ടു" : "Vadha Tara Omitted in Step 2"
+            color: taraEval.color,
+            isOmitted: taraEval.veto && Boolean(o.omitVadha),
+            omittedLabel: isMl ? "പ്രതികൂല താര ഒഴിവാക്കപ്പെട്ടു" : "Adverse Tara Omitted in Step 2"
           },
           {
             key: isMl ? "അഷ്ടമ ശുദ്ധി (എട്ടാം ഭാവം)" : "Ashtama Shuddhi (8th House)",
@@ -4566,22 +4830,111 @@
     }
 
     // Export JSON Archive
-    function exportDossierJson() {
-      const selectedList = generatedCandidates.filter(c => selectedCandidates.has(c.id));
-      const payload = {
-        institute: "Bharatheya Vasthu Jyothisha Padanasala (BharatAstrology.org)",
-        promoter: document.getElementById("promoterName").value,
-        business: document.getElementById("businessName").value,
-        timestamp: new Date().toISOString(),
-        shortlistedMuhurthamSlots: selectedList
+    // =========================================================================
+    // PRINTABLE EXECUTIVE DOSSIER (cover + summary + closing note, print-only DOM)
+    // =========================================================================
+    function buildPrintReport() {
+      const cover = document.getElementById("printReportCover");
+      const closing = document.getElementById("printReportClosing");
+      if (!cover || !closing) return;
+      cover.textContent = "";
+      closing.textContent = "";
+
+      const isMl = currentResultLang === "ml";
+      const L = (en, ml) => (isMl ? ml : en);
+      const val = (id) => { const el = document.getElementById(id); return el ? (el.value || "").trim() : ""; };
+      const optText = (id) => {
+        const el = document.getElementById(id);
+        return el && el.selectedIndex >= 0 ? el.options[el.selectedIndex].text.trim() : "";
       };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `BharatAstrology_Muhurtham_${Date.now()}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const fmtDate = (iso) => {
+        if (!iso) return "—";
+        const [y, m, d] = iso.split("-").map(Number);
+        return new Date(y, m - 1, d).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+      };
+      const el = (tag, cls, text) => {
+        const node = document.createElement(tag);
+        if (cls) node.className = cls;
+        if (text !== undefined) node.textContent = text;
+        return node;
+      };
+
+      const selectedList = generatedCandidates.filter(c => selectedCandidates.has(c.id));
+      const allSwiss = selectedList.length > 0 && selectedList.every(c => c.isSwissEph);
+
+      // Cover heading
+      const head = el("div", "print-report-cover");
+      head.appendChild(el("div", "pr-institute", "Bharatheya Vasthu Jyothisha Padanasala · BharatAstrology.org"));
+      head.appendChild(el("div", "pr-title", L("Business Muhurtham — Executive Dossier", "ബിസിനസ് മുഹൂർത്തം — എക്സിക്യൂട്ടീവ് ഡോസിയർ")));
+      head.appendChild(el("div", "pr-subtitle",
+        `${L("Prepared", "തയ്യാറാക്കിയത്")}: ${new Date().toLocaleString("en-IN", { dateStyle: "long", timeStyle: "short" })}`));
+      cover.appendChild(head);
+
+      // Engagement details
+      cover.appendChild(el("div", "pr-section-title", L("Engagement Details", "വിശദാംശങ്ങൾ")));
+      const details = el("table", "pr-details");
+      const addRow = (k, v) => {
+        const tr = document.createElement("tr");
+        tr.appendChild(el("th", "", k));
+        tr.appendChild(el("td", "", v || "—"));
+        details.appendChild(tr);
+      };
+      addRow(L("Promoter", "സംരംഭകൻ"), val("promoterName"));
+      addRow(L("Birth details", "ജനന വിവരങ്ങൾ"), `${fmtDate(val("promoterDob"))}, ${val("promoterTob") || "—"} · ${optText("birthPlace")}`);
+      addRow(L("Business", "സ്ഥാപനം"), val("businessName"));
+      addRow(L("Business type / nature", "സ്ഥാപന തരം"), [optText("businessType"), optText("businessNature")].filter(Boolean).join(" · "));
+      addRow(L("Business location", "സ്ഥലം"), optText("businessPlace"));
+      addRow(L("Search window", "പരിശോധനാ കാലയളവ്"), `${fmtDate(val("dateStart"))} – ${fmtDate(val("dateEnd"))}`);
+      addRow(L("Ephemeris engine", "ഗണന എഞ്ചിൻ"), allSwiss
+        ? "Swiss Ephemeris (Astrodienst AG, GNU AGPL-3.0), Lahiri ayanamsa"
+        : L("Internal ephemeris fallback (Swiss Ephemeris unavailable when calculated)", "ആന്തരിക ഗണിത എഞ്ചിൻ (ഫാൾബാക്ക്)"));
+      cover.appendChild(details);
+
+      // Shortlist summary
+      cover.appendChild(el("div", "pr-section-title", L(`Shortlisted Muhurthams (${selectedList.length})`, `തിരഞ്ഞെടുത്ത മുഹൂർത്തങ്ങൾ (${selectedList.length})`)));
+      const summary = el("table", "pr-summary");
+      const headRow = document.createElement("tr");
+      [L("Rank", "ക്രമം"), L("Date", "തീയതി"), L("Window", "സമയം"), L("Lagna", "ലഗ്നം"), L("Nakshatra", "നക്ഷത്രം"), L("Tara", "താര")]
+        .forEach(h => headRow.appendChild(el("th", "", h)));
+      headRow.appendChild(el("th", "pr-score", L("Score", "സ്കോർ")));
+      summary.appendChild(headRow);
+      selectedList.forEach((c, i) => {
+        const tr = document.createElement("tr");
+        const lagna = isMl ? RASHI_NAMES_ML[c.lagnaIdx] : c.lagna;
+        const nak = isMl ? NAKSHATRA_NAMES_ML[c.nakshatraIdx] : c.nakshatra;
+        const tara = isMl ? TARA_NAMES_ML[c.taraIdx - 1] : c.tara;
+        [`#${i + 1}`, c.dateDisplay, c.timeWindow, lagna, `${nak} (${L("pada", "പാദം")} ${c.nakshatraPada})`, tara]
+          .forEach(v => tr.appendChild(el("td", "", v)));
+        tr.appendChild(el("td", "pr-score", `${c.score}%`));
+        summary.appendChild(tr);
+      });
+      cover.appendChild(summary);
+      cover.appendChild(el("div", "pr-note", L(
+        "Each shortlisted muhurtham is detailed on the following pages with its South Indian chart, Panchanga and rule checks (Vedic, KP, Western, BaZi/QMDJ), and a recommended ceremony sequence. Times are local to the business location.",
+        "ഓരോ മുഹൂർത്തത്തിന്റെയും ചാർട്ട്, പഞ്ചാംഗം, നിയമ പരിശോധനകൾ, ഉദ്ഘാടന ക്രമം എന്നിവ തുടർന്നുള്ള പേജുകളിൽ. സമയങ്ങൾ സ്ഥാപന സ്ഥലത്തെ പ്രാദേശിക സമയം.")));
+
+      // Closing note
+      closing.appendChild(el("div", "pr-note", L(
+        "This dossier is an astrological election computed from the inputs above. Final selection should be confirmed with a qualified Jyotishi, considering the promoter's full horoscope and current dasha. Generated by the BharatAstrology Business Muhurtham Engine · Source: github.com/bharatastrology/Muhurtham (GNU AGPL-3.0).",
+        "ഈ ഡോസിയർ മുകളിലുള്ള വിവരങ്ങൾ അടിസ്ഥാനമാക്കിയുള്ള ജ്യോതിഷ മുഹൂർത്ത ഗണനയാണ്. അന്തിമ തീരുമാനം യോഗ്യനായ ജ്യോതിഷിയുമായി ആലോചിച്ച് ഉറപ്പാക്കുക. BharatAstrology Business Muhurtham Engine · github.com/bharatastrology/Muhurtham (GNU AGPL-3.0).")));
+    }
+
+    function printExecutiveDossier() {
+      const selectedCount = generatedCandidates.filter(c => selectedCandidates.has(c.id)).length;
+      if (selectedCount === 0) {
+        alert("Please shortlist at least one muhurtham in Step 3 before printing the dossier.");
+        return;
+      }
+      renderScrutinyCards();
+      buildPrintReport();
+      window.print();
+    }
+
+    // Ctrl+P / browser menu printing gets the same cover and summary
+    if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+      window.addEventListener("beforeprint", () => {
+        if (generatedCandidates.some(c => selectedCandidates.has(c.id))) buildPrintReport();
+      });
     }
 
     // =========================================================================
@@ -4607,9 +4960,9 @@
       const startStr = document.getElementById("dateStart").value || getTodayString();
       const busSelect = document.getElementById("businessPlace");
       const busOpt = busSelect ? busSelect.options[busSelect.selectedIndex] : null;
-      const busLat = busOpt ? (parseFloat(busOpt.getAttribute("data-lat")) || 8.5241) : 8.5241;
-      const busLon = busOpt ? (parseFloat(busOpt.getAttribute("data-lon")) || 76.9366) : 76.9366;
-      const busTz = busOpt ? (parseFloat(busOpt.getAttribute("data-tz")) || 5.5) : 5.5;
+      const busLat = attrNum(busOpt, "data-lat", 8.5241);
+      const busLon = attrNum(busOpt, "data-lon", 76.9366);
+      const busTz = attrNum(busOpt, "data-tz", 5.5);
 
       const [evy, evm, evd] = startStr.split("-").map(Number);
       const evalDate = new Date(evy, evm - 1, evd);
@@ -4634,7 +4987,7 @@
       // Birth time is local to the birth place, as in calculateMuhurthamFast
       const birthSelect = document.getElementById("birthPlace");
       const birthOpt = birthSelect ? birthSelect.options[birthSelect.selectedIndex] : null;
-      const birthTz = birthOpt ? (parseFloat(birthOpt.getAttribute("data-tz")) || 5.5) : 5.5;
+      const birthTz = attrNum(birthOpt, "data-tz", 5.5);
       const promoterJD = getJulianDate(dobParts[0], dobParts[1], dobParts[2], tobParts[0] || 0, tobParts[1] || 0, birthTz);
       const promoterAyan = getLahiriAyanamsha(promoterJD);
       const promoterMoon = (getMoonLongitude(promoterJD) - promoterAyan + 360000) % 360;
@@ -4643,8 +4996,9 @@
       // 4. Election slot Panchangam parameters
       const sunLong = internalPlanets.sun;
       const sunRashiIdx = Math.floor(sunLong / 30);
-      const kollamMonthIdx = (sunRashiIdx - 4 + 12) % 12;
-      const kollamDay = Math.floor(sunLong % 30) + 1;
+      const kollam = getKollamDate(y, m, dt, busTz, busLat, busLon);
+      const kollamMonthIdx = kollam.monthIdx;
+      const kollamDay = kollam.day;
 
       const moonLong = internalPlanets.moon;
       const electionNakIdx = Math.floor(moonLong / (360 / 27));
@@ -4671,9 +5025,11 @@
       const planetsIn8th = Object.entries(internalPlanets).filter(([p, pLong]) => Math.floor(pLong / 30) === eighthHouseIdx);
 
       const degInSun = sunLong % 30;
-      const isSankramana = (degInSun >= 29.5) || (degInSun <= 0.5);
+      const hoursFromSankranti = getHoursFromSankranti(internalJD);
+      const isSankramana = hoursFromSankranti <= 6.4;
+      const taraEval = evaluateTara(taraIdx, taraCycle, electionPada);
 
-      const tenthCusp = (internalAsc.longitude + 270) % 360;
+      const tenthCusp = internalAsc.mcLongitude;
       const kpData = getKPSubLord(tenthCusp, internalAsc.rashiIdx);
 
       // Build Modal DOM safely without innerHTML
@@ -4912,18 +5268,18 @@
       const rulesChecklist = [
         {
           name: "Kollam Solar Calendar Alignment",
-          formula: "kollamMonthIdx = (sunRashiIdx - 4 + 12) % 12",
+          formula: "Month starts on the Sankranti day if the ingress falls within the first 3/5 of daytime, else the next day; month = Sun's new rashi - 4",
           result: `${KOLLAM_MONTHS[kollamMonthIdx]} Day ${kollamDay} (Sun at ${degInSun.toFixed(2)}° in ${RASHI_NAMES[sunRashiIdx].split(" ")[0]})`
         },
         {
           name: "Dynamic Tarabalam Calculation",
           formula: "taraOffset = (electionNakIdx - promoterJanmaNakIdx + 27) % 27; taraIdx = (taraOffset % 9) + 1",
-          result: `Promoter Janma: ${NAKSHATRA_NAMES[promoterNakIdx]} -> Election Nak: ${NAKSHATRA_NAMES[electionNakIdx]} = ${TARA_NAMES[taraIdx - 1]} Tara (Cycle ${taraCycle})`
+          result: `Promoter Janma: ${NAKSHATRA_NAMES[promoterNakIdx]} -> Election Nak: ${NAKSHATRA_NAMES[electionNakIdx]} (pada ${electionPada}) = ${TARA_NAMES[taraIdx - 1]} Tara (Cycle ${taraCycle}): ${taraEval.veto ? "rejected" : (taraEval.delta >= 0 ? "favourable" : "mild penalty")} (${taraEval.delta >= 0 ? "+" : ""}${taraEval.delta})`
         },
         {
           name: "Diurnal Octants: Rahu, Gulika & Yamagandam",
-          formula: "Octant Duration = 1.5 hrs from 06:15 AM sunrise. Evaluates interval intersection against candidate slot.",
-          result: `Rahu: ${rahuStart.toFixed(2)}h, Gulika: ${gulikaStart.toFixed(2)}h, Yamagandam: ${yamaStart.toFixed(2)}h. Safely clear.`
+          formula: "Octant = (sunset - sunrise) / 8 at the business location. Evaluates interval intersection against candidate slot.",
+          result: `Sunrise ${sunriseHour.toFixed(2)}h, sunset ${sunTimes.sunset.toFixed(2)}h. Rahu starts ${rahuStart.toFixed(2)}h, Gulika ${gulikaStart.toFixed(2)}h, Yamagandam ${yamaStart.toFixed(2)}h.`
         },
         {
           name: "Ashtama Shuddhi (8th House Vacancy)",
@@ -4932,12 +5288,12 @@
         },
         {
           name: "Masa Sankramana Solar Ingress Cusp",
-          formula: "isMasaSankramana = (sunLong % 30 >= 29.5) || (sunLong % 30 <= 0.5)",
-          result: isSankramana ? "Afflicted (Solar Ingress Transition Cusp)" : "Pure Solar Stability (Clear of Month Transition Cusp)"
+          formula: "isMasaSankramana = |t - Sankranti| <= 16 ghatikas (6 h 24 min)",
+          result: `${isSankramana ? "Afflicted (within 16 ghatikas of solar ingress)" : "Pure Solar Stability (clear of ingress)"}: nearest Sankranti ${hoursFromSankranti.toFixed(1)} h away`
         },
         {
           name: "KP 249 Cuspal Sub-Lord Verification",
-          formula: "10th Cusp Projected Longitude mapped through Vimshottari fractional 800-minute sub-divisions.",
+          formula: "Placidus 10th cusp (Midheaven) longitude mapped through Vimshottari fractional 800-minute sub-divisions.",
           result: `10th Sub-Lord: ${kpData.subLord} (Star: ${kpData.starLord}) ruling Houses ${kpData.signifiedHouses}`
         }
       ];

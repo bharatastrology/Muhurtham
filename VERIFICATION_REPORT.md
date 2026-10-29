@@ -51,16 +51,28 @@ The rule tables themselves were checked and are correct: Rahu, Gulika and Yamaga
 
 For the same input (2–16 Nov 2026, default places), the **live site returns 13 candidates and the fixed version returns 2**. The fixed version gives the same result in SwissEph and internal modes. Most of the 11 dropped slots passed on the live site only because planets were in the wrong places. For example, on 4 Nov 2026 at 09:20 the true Mars is at 116° (Kataka, the 8th house from the Dhanu lagna), so the Ashtama-shuddhi veto applies. The old code put Mars at 77° (Mithuna).
 
-## 5. Open issues for your decision (not changed)
+## 5. Rule refinements (second pass)
 
-- **Sunrise convention:** I used the upper limb with refraction (−0.833°), which most published panchangams use. Some traditions use the disc centre without refraction, which is about 3 min later.
-- **KP 10th cusp** is computed as Asc + 270° (equal houses). Classical KP uses Placidus cusps, and Swiss Ephemeris could supply them with `houses(jd, lat, lon, "P")`.
-- **Tara bala** penalises only Vadha (7). Vipat (3) and Pratyak (5) are usually avoided too.
-- **Heuristics labelled as rules:** VoC Moon means "Moon ≥ 27° in its sign", which is not a true void-of-course check. Combustion uses a flat 8.5° for every planet, while the classical orbs differ per planet. Masa Sankramana uses ±0.5°.
-- **Kollam day** is `floor(Sun° in sign) + 1`. The Kerala civil day count actually depends on when the sankranti falls relative to sunset.
-- **`parseFloat(...) || 5.5`** turns a timezone, latitude or longitude of 0 into a default value. It's harmless today, since no place option has tz 0, but it would break for UTC locations.
-- **The Swiss Ephemeris engine depends on jsDelivr at runtime.** For offline or `.exe` builds, consider vendoring `swisseph-wasm@0.1.0` (its `src/` and `wasm/` folders) next to `index.html`. It is AGPL, the same as now.
-- The `.exe` build in the source folder still embeds the old `index.html`.
+Each item was an open issue in the first pass. All are now fixed and checked with `verify/compare_rules.py` (results in `verify/results_rules.txt`).
+
+| Item | Before | Now | Check vs pyswisseph |
+|---|---|---|---|
+| Sunrise convention | Upper limb + refraction only | Step 2 setting: upper limb + refraction (default) or disc centre without refraction | Disc centre within 0.1 min |
+| KP 10th cusp | Asc + 270° (equal houses) | Placidus 10th cusp, i.e. the Midheaven (`houses().ascmc[1]` in SwissEph mode; `tan λ = tan RAMC / cos ε` internally) | SwissEph exact; internal ≤ 0.005° |
+| Tara bala | Only Vadha (7) vetoed | Muhurta Chintamani paryaya rule. 1st cycle: Vipat (3), Pratyak (5) and Vadha (7) rejected. 2nd/3rd cycle: only Vipat pada 1, Pratyak pada 4 and Vadha pada 3 rejected; other padas amber (−6 / −6 / −10). Janma amber (−8 / −5). The override now covers all three | Rule table unit-checked for all 108 combinations |
+| Void-of-course Moon | Moon ≥ 27° in sign | True Western VoC with tropical signs: no Ptolemaic aspect (0/60/90/120/180°) to Sun–Saturn perfects before the Moon leaves its sign | 80/80 samples agree with a 5-minute step search |
+| Combustion | Flat 8.5° | Surya Siddhanta orbs: Mercury 14°, Venus 10°, Mars 17°, Jupiter 11°, Saturn 15° | — |
+| Masa Sankramana | Sun within ±0.5° of a sign boundary | Within 16 ghatikas (6 h 24 min) of the computed Sankranti | Ingress times: SwissEph 0.01 min, internal ≤ 19 min |
+| Kollam date | `floor(Sun°) + 1` | The month starts on the Sankranti day if the ingress is within the first 3/5 of daytime, otherwise the next day; the day number counts from there | Medam 1 = 14 Apr 2025 (Vishu) and Chingam 1 = 17 Aug 2025 match the published calendar |
+| Zero coordinates | `parseFloat(...) \|\| default` dropped tz/lat/lon of 0 | `attrNum()` keeps any finite value | — |
+| Offline engine | jsDelivr only | `vendor/swisseph-wasm/` (0.1.0, SHA-256 checked against jsDelivr) loads first; the CDN is the fallback | Browser loads only the vendored files |
+| `.exe` | Embedded old `index.html` | Rebuilt by CI from this `index.html` | Build pipeline 15/15 locally |
+
+The Tara rule came from a specialist review of Muhurta Chintamani, Muhurta Martanda, Kalaprakasika and B.V. Raman's *Muhurtha*. That review was done from knowledge of the texts, not checked against a printed edition.
+
+**`.exe` limitation:** the launcher opens the page as a `file://` URL, and browsers won't load ES modules or WebAssembly from `file://`. The `.exe` therefore uses the CDN copy when online and the internal engine when offline. A web deployment over http(s) uses the vendored copy and works offline.
+
+**Swiss Ephemeris licence:** the library is dual-licensed by Astrodienst (AGPL-3.0 or commercial). The `swisseph-wasm` wrapper is GPL-3.0-or-later. This repository is AGPL-3.0 and public, which satisfies the AGPL option. A closed-source or modified deployment that isn't published would need Astrodienst's commercial licence.
 
 ## 6. Notes
 

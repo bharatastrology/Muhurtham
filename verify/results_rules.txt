@@ -1,0 +1,27 @@
+﻿MC / KP 10th cusp (app - swe, degrees)
+  Chennai     swe-mode -0.00000  internal -0.00110
+  Delhi       swe-mode -0.00000  internal -0.00525
+  Trivandrum  swe-mode -0.00000  internal -0.00539
+  London      swe-mode -0.00000  internal +0.00218
+  Mumbai      swe-mode +0.00000  internal -0.00476
+  NewYork     swe-mode -0.00000  internal +0.00113
+  Kochi       swe-mode +0.00000  internal -0.00264
+  Sydney      swe-mode -0.00000  internal +0.00180
+  Bengaluru   swe-mode -0.00000  internal -0.00386
+
+Disc-centre, no-refraction sunrise/sunset (app - swe, minutes)
+  Chennai     rise +0.0  set +0.0
+  Delhi       rise -0.0  set +0.0
+  Trivandrum  rise +0.0  set +0.0
+  London      rise +0.0  set +0.1
+  Mumbai      rise +0.0  set +0.0
+  NewYork     rise +0.0  set +0.1
+  Kochi       rise +0.0  set +0.0
+  Sydney      rise +0.0  set +0.1
+  Bengaluru   rise +0.0  set +0.0
+
+Sankranti (sidereal sign ingress) time error (app - swe, minutes)
+  max |error| over 24 ingresses: swe-mode 0.01 min, internal 19.4 min
+
+Void-of-course Moon (tropical), 80 samples every 3 h
+  agreement 80/80; mismatches: []
