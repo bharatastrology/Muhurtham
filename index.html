@@ -3344,6 +3344,9 @@
       const isSingleDay = startStr === endStr;
       const dayDiff = isSingleDay ? 1 : Math.max(1, Math.round((endDate - startDate) / (1000 * 60 * 60 * 24)));
 
+      // Ticks and Step 4 rejections survive a recalculation for slots that are still in the new list
+      const previouslySelected = new Set(selectedCandidates);
+      const previouslyRejected = new Set(rejectedCandidates);
       generatedCandidates = [];
       selectedCandidates.clear();
       rejectedCandidates.clear();
@@ -3637,7 +3640,8 @@
           const targetTime = `${pad(win.evalHour)}:${pad(win.evalMin)}`;
 
           generatedCandidates.push({
-            id: `cand_${d}_${wIdx}`,
+            // Stable across date-range and rule changes: calendar date + window
+            id: `cand_${y}${pad(m)}${pad(dt)}_${wIdx}`,
             dateObj: curDate,
             dateDisplay: dateStr,
             timeWindow: timeWindow,
@@ -3743,6 +3747,11 @@
 
       // Sort according to selected sort mode
       applySorting();
+
+      generatedCandidates.forEach(c => {
+        if (previouslySelected.has(c.id) && selectedCandidates.size < 5) selectedCandidates.add(c.id);
+        if (previouslyRejected.has(c.id)) rejectedCandidates.add(c.id);
+      });
 
       // Update Fallback Notice Banners
       updateFallbackBanners();
