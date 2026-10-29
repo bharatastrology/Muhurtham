@@ -943,6 +943,28 @@
     }
     .candidate-card.rejected, .day-slot-row.rejected { opacity: 0.6; }
     .calendar-slot-pill.rejected { opacity: 0.55; text-decoration: line-through; }
+    .relaxed-rules {
+      border: 1px solid var(--ba-warning, #f59e0b);
+      border-left: 4px solid var(--ba-warning, #f59e0b);
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      background: rgba(245, 158, 11, 0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .relaxed-rules.high { border-color: var(--ba-danger); border-left-color: var(--ba-danger); background: rgba(220, 38, 38, 0.05); }
+    .relaxed-rules-title { font-weight: 700; color: var(--ba-text-main); }
+    .relaxed-rule { font-size: 0.8rem; line-height: 1.4; color: var(--ba-text-muted); }
+    .relaxed-rule-head { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; color: var(--ba-text-main); margin-bottom: 0.2rem; }
+    .relaxed-rule-line strong { color: var(--ba-text-main); }
+    .relaxed-sev { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.05rem 0.4rem; border-radius: 4px; border: 1px solid; }
+    .relaxed-sev-low { color: var(--ba-accent); }
+    .relaxed-sev-medium { color: var(--ba-warning, #b45309); }
+    .relaxed-sev-high { color: var(--ba-danger); }
+    .relaxed-intro { font-size: 0.8rem; margin: 0.35rem 0; color: var(--ba-text-muted); }
+    .relaxed-intro.high { color: var(--ba-danger); font-weight: 600; }
+    .action-checklist li.remedy-step { font-style: italic; }
     .tag-kalam {
       margin-left: 0.5rem;
       border: 1px solid var(--ba-warning, #f59e0b) !important;
@@ -1011,12 +1033,12 @@
       background: #ef4444;
       box-shadow: 0 0 7px rgba(239, 68, 68, 0.7);
     }
-    .traffic-dimmed {
-      opacity: 0.35 !important;
-      filter: grayscale(0.7) !important;
-      box-shadow: none !important;
-      border: 1px dashed rgba(148, 163, 184, 0.8) !important;
-    }
+    /* Omitted rules: pastel version of the same hue (no glow, dashed ring) so green / amber / red
+       stay recognisable at a glance while clearly softer than active lights */
+    .traffic-light-dot.traffic-dimmed { box-shadow: none; }
+    .traffic-dot-green.traffic-dimmed { background: #a7f3d0; outline: 1.5px dashed #34d399; outline-offset: 1px; }
+    .traffic-dot-amber.traffic-dimmed { background: #fde68a; outline: 1.5px dashed #f59e0b; outline-offset: 1px; }
+    .traffic-dot-red.traffic-dimmed { background: #fecaca; outline: 1.5px dashed #f87171; outline-offset: 1px; }
     .traffic-pill {
       display: inline-flex;
       align-items: center;
@@ -1057,11 +1079,13 @@
       color: #f87171;
       border-color: rgba(239, 68, 68, 0.4);
     }
-    .traffic-pill.traffic-dimmed {
-      opacity: 0.4 !important;
-      filter: grayscale(0.65) !important;
-      border-style: dashed !important;
-    }
+    .traffic-pill.traffic-dimmed { border-style: dashed; font-weight: 500; }
+    .traffic-pill-green.traffic-dimmed { background: #ecfdf5; color: #047857; border-color: #6ee7b7; }
+    .traffic-pill-amber.traffic-dimmed { background: #fffbeb; color: #a16207; border-color: #fcd34d; }
+    .traffic-pill-red.traffic-dimmed { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
+    [data-theme="dark"] .traffic-pill-green.traffic-dimmed { background: rgba(167, 243, 208, 0.08); color: #a7f3d0; border-color: rgba(110, 231, 183, 0.45); }
+    [data-theme="dark"] .traffic-pill-amber.traffic-dimmed { background: rgba(253, 230, 138, 0.08); color: #fde68a; border-color: rgba(252, 211, 77, 0.45); }
+    [data-theme="dark"] .traffic-pill-red.traffic-dimmed { background: rgba(254, 202, 202, 0.08); color: #fecaca; border-color: rgba(252, 165, 165, 0.45); }
     .omitted-pill {
       font-size: 0.65rem;
       padding: 0.1rem 0.35rem;
@@ -1160,6 +1184,11 @@
       .panchanga-table tr { break-inside: avoid; page-break-inside: avoid; }
       .panchanga-table td { border-bottom: 1px solid #e2e8f0 !important; }
       .action-checklist { break-inside: avoid; background: #fffbeb !important; border: 1px solid #f59e0b !important; }
+      .relaxed-rules { background: #fff7ed !important; }
+      /* Side-by-side row alignment is for the screen only; printed cards are one per page */
+      .scrutiny-header, .kundali-wrapper { min-height: 0 !important; }
+      .panchanga-table tr { height: auto !important; }
+      .relaxed-rule { break-inside: avoid; }
       .tag { border: 1px solid #ccc !important; color: #333 !important; }
 
       /* Cover, summary and closing note */
@@ -1778,6 +1807,35 @@
        ========================================================================== -->
   <script>
     // System Constants & Classical Jyotish Matrices
+    const PLANET_NAMES_ML = {
+      sun: "സൂര്യൻ", moon: "ചന്ദ്രൻ", mars: "ചൊവ്വ", mercury: "ബുധൻ", jupiter: "വ്യാഴം",
+      venus: "ശുക്രൻ", saturn: "ശനി", rahu: "രാഹു", ketu: "കേതു"
+    };
+    const TITHI_NAMES_ML = [
+      "പ്രഥമ", "ദ്വിതീയ", "തൃതീയ", "ചതുർത്ഥി", "പഞ്ചമി", "ഷഷ്ഠി", "സപ്തമി", "അഷ്ടമി",
+      "നവമി", "ദശമി", "ഏകാദശി", "ദ്വാദശി", "ത്രയോദശി", "ചതുർദശി", "പൗർണ്ണമി"
+    ];
+    const YOGA_NAMES_ML = [
+      "വിഷ്കംഭം", "പ്രീതി", "ആയുഷ്മാൻ", "സൗഭാഗ്യം", "ശോഭനം", "അതിഗണ്ഡം", "സുകർമ്മം", "ധൃതി",
+      "ശൂലം", "ഗണ്ഡം", "വൃദ്ധി", "ധ്രുവം", "വ്യാഘാതം", "ഹർഷണം", "വജ്രം", "സിദ്ധി", "വ്യതീപാതം",
+      "വരീയാൻ", "പരിഘം", "ശിവം", "സിദ്ധം", "സാധ്യം", "ശുഭം", "ശുക്ലം", "ബ്രഹ്മം", "ഐന്ദ്രം", "വൈധൃതി"
+    ];
+    const KARANA_NAMES_ML = {
+      Bava: "ബവം", Balava: "ബാലവം", Kaulava: "കൗലവം", Taitila: "തൈതിലം", Gara: "ഗരജം",
+      Vanija: "വണിജം", Vishti: "വിഷ്ടി", Kimstughna: "കിംസ്തുഘ്നം", Shakuni: "ശകുനി",
+      Chatushpada: "ചതുഷ്പാദം", Naga: "നാഗം"
+    };
+    const GRADE_NAMES_ML = { Excellent: "ഉത്തമം", Good: "നല്ലത്", Fair: "മധ്യമം", Weak: "ദുർബലം" };
+    const PANCHANGA_VETO_ML = {
+      "Amavasya": "അമാവാസി", "Vishti (Bhadra) karana": "വിഷ്ടി (ഭദ്ര) കരണം",
+      "Vyatipata yoga": "വ്യതീപാത യോഗം", "Vaidhriti yoga": "വൈധൃതി യോഗം", "Chandrashtama": "ചന്ദ്രാഷ്ടമം"
+    };
+    // Tithi label in Malayalam for index 0..29
+    const getTithiNameMl = (idx) => idx === 29 ? "അമാവാസി"
+      : `${idx < 15 ? "ശുക്ലപക്ഷ" : "കൃഷ്ണപക്ഷ"} ${TITHI_NAMES_ML[idx % 15]}`;
+    // Civil date in Malayalam, e.g. "2026 നവംബർ 26, വ്യാഴം"
+    const formatDateMl = (d) => d.toLocaleDateString("ml-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+
     const RASHI_NAMES = [
       "Mesha (Aries)", "Vrishabha (Taurus)", "Mithuna (Gemini)", "Karkidakam (Cancer)",
       "Simha (Leo)", "Kanya (Virgo)", "Thula (Libra)", "Vrischikam (Scorpio)",
@@ -2038,6 +2096,7 @@
         hasStep4LoadedOnce = true;
         triggerLangPulseOnce();
       }
+      if (step === 4) scheduleScrutinyAlignment(); // cards are measurable only once the panel is visible
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
@@ -3063,17 +3122,8 @@
           textDiv.appendChild(subDiv);
           leftBox.appendChild(textDiv);
 
-          const rightBox = document.createElement("div");
-          const redoBtn = document.createElement("button");
-          redoBtn.type = "button";
-          redoBtn.className = "btn btn-secondary btn-sm";
-          redoBtn.textContent = "🔄 Redo Calculations";
-          redoBtn.title = "Recalculate candidate Muhurtham slots";
-          redoBtn.onclick = () => calculateMuhurthamFast();
-          rightBox.appendChild(redoBtn);
-
+          // No Redo here: Swiss Ephemeris is active and the panel heading already has a Redo button
           b3.appendChild(leftBox);
-          b3.appendChild(rightBox);
         }
       }
 
@@ -3149,17 +3199,8 @@
           textDiv.appendChild(subDiv);
           leftBox.appendChild(textDiv);
 
-          const rightBox = document.createElement("div");
-          const redoBtn = document.createElement("button");
-          redoBtn.type = "button";
-          redoBtn.className = "btn btn-secondary btn-sm";
-          redoBtn.textContent = "🔄 Redo Calculations";
-          redoBtn.title = "Recalculate candidate Muhurtham slots";
-          redoBtn.onclick = () => calculateMuhurthamFast();
-          rightBox.appendChild(redoBtn);
-
+          // No Redo here: Swiss Ephemeris is active and the panel heading already has a Redo button
           b4.appendChild(leftBox);
-          b4.appendChild(rightBox);
         }
       }
     }
@@ -3332,6 +3373,7 @@
       const ruledHouses = subLordObj.rules.map(r => ((r - lagnaIdx + 12) % 12) + 1).sort((a,b)=>a-b);
       return {
         starLord: VIMSHOTTARI_LORDS[startLordIdx].name,
+        starLordMl: VIMSHOTTARI_LORDS[startLordIdx].ml,
         subLord: subLordObj.name,
         subLordMl: subLordObj.ml,
         signifiedHouses: ruledHouses.join(", ")
@@ -3352,7 +3394,7 @@
           if (orb <= a.maxOrb) {
             return {
               text: `${a.name} with ${pName} (${orb.toFixed(1)}° orb)`,
-              textMl: `${pNameMl}നുമായി ${a.nameMl} (${orb.toFixed(1)}° orb)`,
+              textMl: `${pNameMl} ${a.nameMl} (ഓർബ് ${orb.toFixed(1)}°)`,
               nature: a.nature
             };
           }
@@ -3360,29 +3402,30 @@
         return null;
       };
 
-      const aspJup = checkPair(jupLong, "Jupiter", "വ്യാഴം");
+      // Malayalam names are given in the sociative case ("with Jupiter")
+      const aspJup = checkPair(jupLong, "Jupiter", "വ്യാഴവുമായി");
       if (aspJup) return aspJup;
-      const aspVen = checkPair(venLong, "Venus", "ശുക്രൻ");
+      const aspVen = checkPair(venLong, "Venus", "ശുക്രനുമായി");
       if (aspVen) return aspVen;
-      const aspSun = checkPair(sunLong, "Sun", "സൂര്യൻ");
+      const aspSun = checkPair(sunLong, "Sun", "സൂര്യനുമായി");
       if (aspSun) return aspSun;
 
       return {
         text: "Harmonious Direct Flow (Void-of-Course Safe)",
-        textMl: "ശൂന്യപഥ ദോഷമില്ലാത്ത ശുദ്ധ സഞ്ചാരം (VoC Free)",
+        textMl: "ശൂന്യപഥ ദോഷമില്ലാത്ത ശുദ്ധ സഞ്ചാരം",
         nature: "benefic"
       };
     }
 
     const QMDJ_DOORS = [
-      { name: "Open Door (Kai Men 开门)", nameMl: "തുറന്ന വാതിൽ (Kai Men 开门)", dir: "Northwest", nature: "Supreme for Launch & Invoicing" },
-      { name: "Life Door (Sheng Men 生门)", nameMl: "ജീവിത വാതിൽ (Sheng Men 生门)", dir: "Northeast", nature: "Supreme for Capital & Prosperity" },
-      { name: "Rest Door (Xiu Men 休门)", nameMl: "വിശ്രമ വാതിൽ (Xiu Men 休门)", dir: "North", nature: "Excellent for Partnership Peace" },
-      { name: "Scenery Door (Jing Men 景门)", nameMl: "ദൃശ്യ വാതിൽ (Jing Men 景门)", dir: "South", nature: "Favorable for Public Marketing" },
-      { name: "Injury Door (Shang Men 伤门)", nameMl: "ക്ഷത വാതിൽ (Shang Men 伤门)", dir: "East", nature: "Neutral" },
-      { name: "Block Door (Du Men 杜门)", nameMl: "തടസ്സ വാതിൽ (Du Men 杜门)", dir: "Southeast", nature: "Internal Strategy" },
-      { name: "Alarm Door (Jing Men 惊门)", nameMl: "ശബ്ദ വാതിൽ (Jing Men 惊门)", dir: "West", nature: "Alert" },
-      { name: "Death Door (Si Men 死门)", nameMl: "ശാന്ത വാതിൽ (Si Men 死门)", dir: "Southwest", nature: "Restricted" }
+      { name: "Open Door (Kai Men 开门)", nameMl: "തുറന്ന വാതിൽ (Kai Men 开门)", dir: "Northwest", dirMl: "വടക്കുപടിഞ്ഞാറ്", nature: "Supreme for Launch & Invoicing", natureMl: "ഉദ്ഘാടനത്തിനും ബില്ലിംഗിനും അത്യുത്തമം" },
+      { name: "Life Door (Sheng Men 生门)", nameMl: "ജീവന വാതിൽ (Sheng Men 生门)", dir: "Northeast", dirMl: "വടക്കുകിഴക്ക്", nature: "Supreme for Capital & Prosperity", natureMl: "മൂലധനത്തിനും സമൃദ്ധിക്കും അത്യുത്തമം" },
+      { name: "Rest Door (Xiu Men 休门)", nameMl: "വിശ്രമ വാതിൽ (Xiu Men 休门)", dir: "North", dirMl: "വടക്ക്", nature: "Excellent for Partnership Peace", natureMl: "പങ്കാളിത്ത സൗഹൃദത്തിന് ഉത്തമം" },
+      { name: "Scenery Door (Jing Men 景门)", nameMl: "ദൃശ്യ വാതിൽ (Jing Men 景门)", dir: "South", dirMl: "തെക്ക്", nature: "Favorable for Public Marketing", natureMl: "പൊതുപ്രചാരണത്തിന് അനുകൂലം" },
+      { name: "Injury Door (Shang Men 伤门)", nameMl: "ക്ഷത വാതിൽ (Shang Men 伤门)", dir: "East", dirMl: "കിഴക്ക്", nature: "Neutral", natureMl: "നിഷ്പക്ഷം" },
+      { name: "Block Door (Du Men 杜门)", nameMl: "തടസ്സ വാതിൽ (Du Men 杜门)", dir: "Southeast", dirMl: "തെക്കുകിഴക്ക്", nature: "Internal Strategy", natureMl: "ആന്തരിക ആസൂത്രണത്തിന് മാത്രം; ഉദ്ഘാടനത്തിന് അനുയോജ്യമല്ല" },
+      { name: "Alarm Door (Jing Men 惊门)", nameMl: "ഭീതി വാതിൽ (Jing Men 惊门)", dir: "West", dirMl: "പടിഞ്ഞാറ്", nature: "Alert", natureMl: "ജാഗ്രത ആവശ്യം" },
+      { name: "Death Door (Si Men 死门)", nameMl: "മൃത്യു വാതിൽ (Si Men 死门)", dir: "Southwest", dirMl: "തെക്കുപടിഞ്ഞാറ്", nature: "Restricted", natureMl: "നിയന്ത്രിതം; പുതിയ സംരംഭങ്ങൾക്ക് ഒഴിവാക്കുക" }
     ];
 
     function getQMDJ(jd, evalHour) {
@@ -3407,6 +3450,232 @@
       tag.textContent = `⚠ Overlaps ${what} · ${cand.cleanSegments.length ? "Clean: " + cand.cleanSegments.map(s => s.text).join(", ") : "no clean time"}`;
       tag.title = "This slot overlaps an inauspicious period because that rule is omitted in Step 2. Use the clean time shown.";
       return tag;
+    }
+
+    // Guidance shown when a muhurtham is kept despite breaking a rule (Step 2 omission or
+    // single-day check): when it is tolerable, why it matters, mitigation and a ceremony step
+    // ({clean} = clean time). Written by a muhurta specialist review; severity drives the dossier tone.
+    const RELAXED_RULE_GUIDANCE = {
+      "rules": {
+        "rahu": {
+          "title": "Rahu Kalam overlap",
+          "whyOk": "If only part of the slot touches Rahu Kalam, most Kerala practitioners accept it as long as the lamp, signing and first invoice all happen in the clean part. Rahu Kalam is a daily time window, not a flaw of the day, so the day's other strengths still count.",
+          "whyBad": "Starting something during Rahu Kalam is traditionally linked to delays, confusion and setbacks you did not see coming. That is why people avoid it for new ventures.",
+          "mitigation": "Do the key acts only in the clean time, and treat any part inside Rahu Kalam as preparation (arranging, guests arriving). Before you begin, offer a short prayer to Ganapathi and Durga and light a ghee lamp.",
+          "ceremonyStep": "Before the lamp, offer prayers to Ganapathi and Durga, then do the lamp, ribbon cutting and first invoice only within the clean time {clean}.",
+          "severity": "medium",
+          "titleMl": "രാഹുകാലം ഉൾപ്പെടുന്നു",
+          "whyOkMl": "മുഹൂർത്തത്തിന്റെ ഒരു ഭാഗം മാത്രമാണ് രാഹുകാലത്തിൽ വരുന്നതെങ്കിൽ, വിളക്ക് കൊളുത്തൽ, ഒപ്പിടൽ, ആദ്യ ഇൻവോയ്സ് എന്നിവ ശുദ്ധസമയത്ത് ചെയ്താൽ മതിയെന്ന് മിക്ക ജ്യോതിഷികളും കരുതുന്നു. രാഹുകാലം ദിവസേനയുള്ള ഒരു സമയഭാഗം മാത്രമാണ്, ദിവസത്തിന്റെ ദോഷമല്ല; അതുകൊണ്ട് ദിവസത്തിന്റെ മറ്റ് ഗുണങ്ങൾ നിലനിൽക്കും.",
+          "whyBadMl": "രാഹുകാലത്ത് പുതിയ കാര്യം തുടങ്ങിയാൽ കാലതാമസം, ആശയക്കുഴപ്പം, അപ്രതീക്ഷിത തടസ്സങ്ങൾ എന്നിവ ഉണ്ടാകാമെന്നാണ് പരമ്പരാഗത വിശ്വാസം. അതുകൊണ്ടാണ് പുതിയ സംരംഭങ്ങൾക്ക് ഈ സമയം ഒഴിവാക്കുന്നത്.",
+          "mitigationMl": "പ്രധാന കർമ്മങ്ങൾ ശുദ്ധസമയത്ത് മാത്രം ചെയ്യുക. രാഹുകാലത്തിൽ വരുന്ന ഭാഗം ഒരുക്കങ്ങൾക്കും അതിഥികളെ സ്വീകരിക്കാനും ഉപയോഗിക്കുക. തുടങ്ങുന്നതിനു മുമ്പ് ഗണപതിയെയും ദുർഗ്ഗയെയും പ്രാർത്ഥിച്ച് നെയ്യ് വിളക്ക് കൊളുത്തുക.",
+          "ceremonyStepMl": "വിളക്ക് കൊളുത്തുന്നതിനു മുമ്പ് ഗണപതിയെയും ദുർഗ്ഗയെയും പ്രാർത്ഥിക്കുക; വിളക്ക്, റിബൺ മുറിക്കൽ, ആദ്യ ഇൻവോയ്സ് എന്നിവ ശുദ്ധസമയമായ {clean} ൽ മാത്രം ചെയ്യുക."
+        },
+        "gulika": {
+          "title": "Gulika Kalam overlap",
+          "whyOk": "Some traditions say whatever starts in Gulika Kalam tends to repeat, so they accept it for things you want to recur, like sales. A partial overlap is usually fine if the key acts fall in the clean portion.",
+          "whyBad": "In Kerala, Gulika (Mandi) is seen as a strong malefic. Starting a venture in its period is believed to bring hidden obstacles, or to keep repeating whatever problems come up.",
+          "mitigation": "Keep the lamp, signing and first invoice outside Gulika Kalam. Before starting, chant or listen to the Mrityunjaya mantra or a short Shiva prayer and light a lamp.",
+          "ceremonyStep": "Begin with a short prayer to Lord Shiva and complete all key acts within the clean time {clean}, outside Gulika Kalam.",
+          "severity": "medium",
+          "titleMl": "ഗുളികകാലം ഉൾപ്പെടുന്നു",
+          "whyOkMl": "ഗുളികകാലത്ത് തുടങ്ങുന്നത് ആവർത്തിക്കും എന്നാണ് ചില പാരമ്പര്യങ്ങളുടെ വിശ്വാസം; അതിനാൽ വിൽപന പോലെ ആവർത്തിക്കേണ്ട കാര്യങ്ങൾക്ക് അവർ ഇത് സ്വീകരിക്കുന്നു. പ്രധാന കർമ്മങ്ങൾ ശുദ്ധസമയത്താണെങ്കിൽ ഭാഗികമായ ഉൾപ്പെടൽ സാധാരണ പ്രശ്നമല്ല.",
+          "whyBadMl": "കേരള ജ്യോതിഷത്തിൽ ഗുളികനെ (മാന്ദി) ശക്തനായ പാപഗ്രഹമായി കാണുന്നു. ഈ സമയത്ത് സംരംഭം തുടങ്ങിയാൽ മറഞ്ഞിരിക്കുന്ന തടസ്സങ്ങൾ ഉണ്ടാകാമെന്നും, വരുന്ന പ്രശ്നങ്ങൾ വീണ്ടും വീണ്ടും ആവർത്തിക്കാമെന്നുമാണ് വിശ്വാസം.",
+          "mitigationMl": "വിളക്ക്, ഒപ്പിടൽ, ആദ്യ ഇൻവോയ്സ് എന്നിവ ഗുളികകാലത്തിനു പുറത്ത് ചെയ്യുക. തുടങ്ങുന്നതിനു മുമ്പ് മൃത്യുഞ്ജയ മന്ത്രമോ ഒരു ചെറിയ ശിവപ്രാർത്ഥനയോ ചൊല്ലി വിളക്ക് കൊളുത്തുക.",
+          "ceremonyStepMl": "ശിവഭഗവാനെ പ്രാർത്ഥിച്ച് ആരംഭിക്കുക; എല്ലാ പ്രധാന കർമ്മങ്ങളും ഗുളികകാലം ഒഴിവാക്കി ശുദ്ധസമയമായ {clean} ൽ പൂർത്തിയാക്കുക."
+        },
+        "yama": {
+          "title": "Yamagandam overlap",
+          "whyOk": "Yamagandam carries less weight than Rahu Kalam for most beginnings, so a partial overlap is commonly tolerated when the main acts are timed outside it.",
+          "whyBad": "Yamagandam is traditionally linked to obstruction and to efforts that do not bear fruit. People avoid it for starting new work.",
+          "mitigation": "Use the Yamagandam portion for preparations only and do the key acts in the clean time. A simple prayer to Lord Vishnu or a lit lamp at the entrance is a customary remedy.",
+          "ceremonyStep": "Offer a prayer to Lord Vishnu and perform the lamp, unveiling and first invoice only within the clean time {clean}.",
+          "severity": "medium",
+          "titleMl": "യമകണ്ടകാലം ഉൾപ്പെടുന്നു",
+          "whyOkMl": "മിക്ക ആരംഭങ്ങൾക്കും യമകണ്ടത്തിന് രാഹുകാലത്തേക്കാൾ പ്രാധാന്യം കുറവാണ്. പ്രധാന കർമ്മങ്ങൾ അതിനു പുറത്താണെങ്കിൽ ഭാഗികമായ ഉൾപ്പെടൽ സാധാരണ സ്വീകരിക്കാറുണ്ട്.",
+          "whyBadMl": "യമകണ്ടകാലം തടസ്സങ്ങളുമായും ഫലം കാണാത്ത പരിശ്രമങ്ങളുമായും ബന്ധപ്പെട്ടതായാണ് പരമ്പരാഗത വിശ്വാസം. അതുകൊണ്ട് പുതിയ ജോലി തുടങ്ങാൻ ഈ സമയം ഒഴിവാക്കുന്നു.",
+          "mitigationMl": "യമകണ്ടത്തിൽ വരുന്ന ഭാഗം ഒരുക്കങ്ങൾക്ക് മാത്രം ഉപയോഗിക്കുക; പ്രധാന കർമ്മങ്ങൾ ശുദ്ധസമയത്ത് ചെയ്യുക. വിഷ്ണുഭഗവാനോടുള്ള ഒരു ലളിതമായ പ്രാർത്ഥനയോ പ്രവേശന കവാടത്തിൽ ഒരു വിളക്കോ ആണ് പതിവ് പരിഹാരം.",
+          "ceremonyStepMl": "വിഷ്ണുഭഗവാനെ പ്രാർത്ഥിച്ച ശേഷം വിളക്ക്, ബോർഡ് അനാച്ഛാദനം, ആദ്യ ഇൻവോയ്സ് എന്നിവ ശുദ്ധസമയമായ {clean} ൽ മാത്രം ചെയ്യുക."
+        },
+        "sankramana": {
+          "title": "Near solar ingress (Sankranti)",
+          "whyOk": "The strictest avoidance covers only the hours closest to the exact ingress. A slot near the edge of the 16-ghatika window, with good tithi, nakshatra and lagna, is often accepted.",
+          "whyBad": "The Sun's change of sign is a transition point, and texts set it aside for worship and charity rather than for new ventures. Starting then is believed to bring instability while things settle.",
+          "mitigation": "If possible, schedule the key acts at the part of the slot farthest from the exact ingress time. Begin with Surya worship, such as Aditya Hridayam or offering water to the Sun, and a small dana of wheat or jaggery.",
+          "ceremonyStep": "Before the lamp, offer water and a prayer to Surya and give a small dana of wheat or jaggery.",
+          "severity": "medium",
+          "titleMl": "സൂര്യസംക്രമത്തിന് സമീപം",
+          "whyOkMl": "കൃത്യമായ സംക്രമസമയത്തോട് ഏറ്റവും അടുത്ത മണിക്കൂറുകൾ മാത്രമാണ് കർശനമായി ഒഴിവാക്കുന്നത്. 16 നാഴികയുടെ അതിരിനടുത്താണ് മുഹൂർത്തമെങ്കിൽ, തിഥിയും നക്ഷത്രവും ലഗ്നവും നല്ലതാണെങ്കിൽ, പലപ്പോഴും സ്വീകരിക്കാറുണ്ട്.",
+          "whyBadMl": "സൂര്യൻ രാശി മാറുന്ന സമയം ഒരു സംക്രമണഘട്ടമാണ്; പുതിയ സംരംഭങ്ങൾക്കല്ല, പൂജയ്ക്കും ദാനത്തിനുമാണ് ശാസ്ത്രങ്ങൾ ഈ സമയം നീക്കിവെക്കുന്നത്. ഈ സമയത്ത് തുടങ്ങിയാൽ കാര്യങ്ങൾ ഉറയ്ക്കുന്നതുവരെ അസ്ഥിരത ഉണ്ടാകാമെന്നാണ് വിശ്വാസം.",
+          "mitigationMl": "സാധിക്കുമെങ്കിൽ, പ്രധാന കർമ്മങ്ങൾ കൃത്യമായ സംക്രമസമയത്തു നിന്ന് ഏറ്റവും അകലെയുള്ള ഭാഗത്ത് വെക്കുക. ആദിത്യഹൃദയം ചൊല്ലുകയോ സൂര്യന് ജലം അർപ്പിക്കുകയോ ചെയ്ത് സൂര്യാരാധനയോടെ തുടങ്ങുക; ഗോതമ്പോ ശർക്കരയോ ചെറിയ തോതിൽ ദാനം ചെയ്യുക.",
+          "ceremonyStepMl": "വിളക്ക് കൊളുത്തുന്നതിനു മുമ്പ് സൂര്യന് ജലവും പ്രാർത്ഥനയും അർപ്പിച്ച് ഗോതമ്പോ ശർക്കരയോ ചെറിയ തോതിൽ ദാനം ചെയ്യുക."
+        },
+        "ashtama": {
+          "title": "Malefic or Moon in 8th from lagna",
+          "whyOk": "Some practitioners relax this when the planet in the 8th is in its own or exalted sign, or when the lagna and its lord are strong and aspected by benefics. Even so, a clean 8th house (Ashtama Shuddhi) is one of the core requirements of an election chart.",
+          "whyBad": "The 8th house of the muhurta chart stands for obstacles, sudden losses and how long the venture lasts. Mars or the Moon placed there is considered especially harmful to a new business.",
+          "mitigation": "The lagna changes roughly every two hours, so the best fix is to shift the key acts to a time when the 8th house is clear. If that is not possible, consult a Jyotishi, and recite or arrange a Mrityunjaya or Navagraha prayer before starting.",
+          "ceremonyStep": "Before the lamp, offer a Navagraha prayer and chant the Mrityunjaya mantra; if possible, consult a Jyotishi about shifting to a better lagna.",
+          "severity": "high",
+          "titleMl": "ലഗ്നത്തിൽ നിന്ന് 8-ൽ പാപഗ്രഹം / ചന്ദ്രൻ",
+          "whyOkMl": "എട്ടിലുള്ള ഗ്രഹം സ്വക്ഷേത്രത്തിലോ ഉച്ചത്തിലോ ആണെങ്കിൽ, അല്ലെങ്കിൽ ലഗ്നവും ലഗ്നാധിപനും ബലവാന്മാരും ശുഭദൃഷ്ടിയുള്ളവരുമാണെങ്കിൽ, ചില ജ്യോതിഷികൾ ഇതിൽ ഇളവ് നൽകാറുണ്ട്. എന്നിരുന്നാലും, മുഹൂർത്തചാർട്ടിന്റെ അടിസ്ഥാന ആവശ്യങ്ങളിൽ ഒന്നാണ് അഷ്ടമശുദ്ധി.",
+          "whyBadMl": "മുഹൂർത്തചാർട്ടിലെ എട്ടാം ഭാവം തടസ്സങ്ങളെയും പെട്ടെന്നുള്ള നഷ്ടങ്ങളെയും സംരംഭം എത്രകാലം നിലനിൽക്കും എന്നതിനെയും സൂചിപ്പിക്കുന്നു. ചൊവ്വയോ ചന്ദ്രനോ അവിടെ നിന്നാൽ പുതിയ ബിസിനസിന് പ്രത്യേകിച്ച് ദോഷകരമാണെന്ന് കരുതുന്നു.",
+          "mitigationMl": "ഏകദേശം രണ്ട് മണിക്കൂറിൽ ലഗ്നം മാറുന്നതിനാൽ, എട്ടാം ഭാവം ശുദ്ധമായ സമയത്തേക്ക് പ്രധാന കർമ്മങ്ങൾ മാറ്റുന്നതാണ് ഏറ്റവും നല്ല പരിഹാരം. അത് സാധ്യമല്ലെങ്കിൽ ഒരു ജ്യോതിഷിയെ കാണുക; തുടങ്ങുന്നതിനു മുമ്പ് മൃത്യുഞ്ജയ പ്രാർത്ഥനയോ നവഗ്രഹ പ്രാർത്ഥനയോ ചൊല്ലുകയോ ഏർപ്പാടാക്കുകയോ ചെയ്യുക.",
+          "ceremonyStepMl": "വിളക്ക് കൊളുത്തുന്നതിനു മുമ്പ് നവഗ്രഹ പ്രാർത്ഥനയും മൃത്യുഞ്ജയ മന്ത്രജപവും നടത്തുക; സാധിക്കുമെങ്കിൽ നല്ല ലഗ്നത്തിലേക്ക് മാറ്റുന്നതിനെക്കുറിച്ച് ജ്യോതിഷിയോട് ആലോചിക്കുക."
+        },
+        "tara": {
+          "title": "Adverse Tara for promoter",
+          "whyOk": "In the 2nd and 3rd star cycles, only certain padas are considered harmful, and a strong waxing Moon is said to reduce the flaw. It affects only the promoter's own star, so a partner with favourable Tara can perform the key acts.",
+          "whyBad": "Vipat, Pratyak and Vadha Tara are traditionally linked to loss, opposition and setbacks for the person who starts the work. The business itself is not condemned, but the promoter may face extra struggle.",
+          "mitigation": "Give the traditional dana before starting: jaggery for Vipat, salt for Pratyak, and sesame for Vadha. Where possible, have a co-founder or family member with good Tara light the lamp or sign first.",
+          "ceremonyStep": "Before the lamp, give the customary dana for the adverse Tara (jaggery, salt or sesame) and offer a prayer to your family deity.",
+          "severity": "medium",
+          "titleMl": "ഉടമയ്ക്ക് പ്രതികൂല താര",
+          "whyOkMl": "രണ്ടാമത്തെയും മൂന്നാമത്തെയും നക്ഷത്രചക്രങ്ങളിൽ ചില പാദങ്ങൾ മാത്രമാണ് ദോഷകരമായി കണക്കാക്കുന്നത്; ശക്തനായ ശുക്ലപക്ഷ ചന്ദ്രൻ ദോഷം കുറയ്ക്കുമെന്നും പറയുന്നു. ഇത് ഉടമയുടെ നക്ഷത്രത്തെ മാത്രം ബാധിക്കുന്നതിനാൽ, അനുകൂല താരയുള്ള ഒരു പങ്കാളിക്ക് പ്രധാന കർമ്മങ്ങൾ ചെയ്യാം.",
+          "whyBadMl": "വിപത്, പ്രത്യക്, വധ താരകൾ കാര്യം തുടങ്ങുന്ന വ്യക്തിക്ക് നഷ്ടം, എതിർപ്പ്, തിരിച്ചടി എന്നിവയുമായി ബന്ധപ്പെട്ടതാണെന്നാണ് പരമ്പരാഗത വിശ്വാസം. ബിസിനസിനെ തന്നെ ഇത് ദോഷപ്പെടുത്തുന്നില്ല, എന്നാൽ ഉടമയ്ക്ക് കൂടുതൽ പ്രയത്നം വേണ്ടിവന്നേക്കാം.",
+          "mitigationMl": "തുടങ്ങുന്നതിനു മുമ്പ് പരമ്പരാഗത ദാനം ചെയ്യുക: വിപത് താരയ്ക്ക് ശർക്കര, പ്രത്യക് താരയ്ക്ക് ഉപ്പ്, വധ താരയ്ക്ക് എള്ള്. സാധിക്കുമെങ്കിൽ, നല്ല താരയുള്ള ഒരു പങ്കാളിയോ കുടുംബാംഗമോ ആദ്യം വിളക്ക് കൊളുത്തുകയോ ഒപ്പിടുകയോ ചെയ്യട്ടെ.",
+          "ceremonyStepMl": "വിളക്ക് കൊളുത്തുന്നതിനു മുമ്പ് പ്രതികൂല താരയ്ക്കുള്ള പതിവ് ദാനം (ശർക്കര, ഉപ്പ് അല്ലെങ്കിൽ എള്ള്) നൽകി കുലദേവതയെ പ്രാർത്ഥിക്കുക."
+        },
+        "amavasya": {
+          "title": "New moon (Amavasya)",
+          "whyOk": "Some trading communities treat particular new moons, such as Deepavali Lakshmi Puja night, as auspicious for opening new account books. In Kerala practice, though, Amavasya is generally avoided for starting a business.",
+          "whyBad": "On the new moon the Moon has no strength. The Moon governs the mind, the public and cash flow, so the day is linked to weak growth and low visibility for a new venture.",
+          "mitigation": "Choosing another day is strongly preferred. If you must proceed, light a lamp for the ancestors, offer a Lakshmi prayer, and keep the launch simple.",
+          "ceremonyStep": "Before the main lamp, light a separate lamp for the ancestors and offer a prayer to Goddess Lakshmi.",
+          "severity": "high",
+          "titleMl": "അമാവാസി",
+          "whyOkMl": "ദീപാവലി ലക്ഷ്മീപൂജ രാത്രി പോലെ ചില പ്രത്യേക അമാവാസികൾ പുതിയ കണക്കുപുസ്തകം തുറക്കാൻ ശുഭമായി ചില വ്യാപാരി സമൂഹങ്ങൾ കണക്കാക്കുന്നു. എന്നാൽ കേരള രീതിയിൽ ബിസിനസ് തുടങ്ങാൻ അമാവാസി സാധാരണ ഒഴിവാക്കുന്നു.",
+          "whyBadMl": "അമാവാസിയിൽ ചന്ദ്രന് ബലം ഇല്ല. മനസ്സ്, പൊതുജനം, പണത്തിന്റെ ഒഴുക്ക് എന്നിവയുടെ കാരകൻ ചന്ദ്രനായതിനാൽ, പുതിയ സംരംഭത്തിന് ദുർബലമായ വളർച്ചയും കുറഞ്ഞ ജനശ്രദ്ധയുമാണ് ഈ ദിവസവുമായി ബന്ധപ്പെടുത്തുന്നത്.",
+          "mitigationMl": "മറ്റൊരു ദിവസം തിരഞ്ഞെടുക്കുന്നതാണ് ഏറ്റവും നല്ലത്. നിർബന്ധമാണെങ്കിൽ, പിതൃക്കൾക്കായി ഒരു വിളക്ക് കൊളുത്തി ലക്ഷ്മീപ്രാർത്ഥന നടത്തുക, ഉദ്ഘാടനം ലളിതമായി നടത്തുക.",
+          "ceremonyStepMl": "പ്രധാന വിളക്കിനു മുമ്പ് പിതൃക്കൾക്കായി ഒരു പ്രത്യേക വിളക്ക് കൊളുത്തി ലക്ഷ്മീദേവിയെ പ്രാർത്ഥിക്കുക."
+        },
+        "vishti": {
+          "title": "Vishti (Bhadra) karana",
+          "whyOk": "Vishti lasts only about half a tithi, so if it ends inside the slot you can do the key acts after it ends. Some traditions also treat its last part (Bhadra puccha) as acceptable.",
+          "whyBad": "Vishti is the one karana that texts reject for auspicious beginnings. It is linked to quarrels, obstacles and work that does not go to plan.",
+          "mitigation": "Check when Vishti ends and place the lamp, signing and first invoice after that time if possible. Begin with a Ganapathi prayer and break a coconut before the ceremony.",
+          "ceremonyStep": "Begin with a Ganapathi prayer and break a coconut, then do the key acts after Vishti ends, within the clean time {clean}.",
+          "severity": "medium",
+          "titleMl": "വിഷ്ടി (ഭദ്ര) കരണം",
+          "whyOkMl": "വിഷ്ടി ഏകദേശം അര തിഥി മാത്രമേ നീളൂ; മുഹൂർത്തത്തിനുള്ളിൽ അത് അവസാനിക്കുന്നുവെങ്കിൽ, അതിനു ശേഷം പ്രധാന കർമ്മങ്ങൾ ചെയ്യാം. അതിന്റെ അവസാനഭാഗം (ഭദ്രാ പുച്ഛം) സ്വീകാര്യമാണെന്നും ചില പാരമ്പര്യങ്ങൾ കരുതുന്നു.",
+          "whyBadMl": "ശുഭാരംഭങ്ങൾക്ക് ശാസ്ത്രങ്ങൾ തള്ളിക്കളയുന്ന ഒരേയൊരു കരണമാണ് വിഷ്ടി. കലഹം, തടസ്സങ്ങൾ, പദ്ധതി പോലെ നടക്കാത്ത ജോലി എന്നിവയുമായാണ് ഇതിനെ ബന്ധപ്പെടുത്തുന്നത്.",
+          "mitigationMl": "വിഷ്ടി എപ്പോൾ അവസാനിക്കുന്നു എന്ന് നോക്കി, സാധിക്കുമെങ്കിൽ വിളക്ക്, ഒപ്പിടൽ, ആദ്യ ഇൻവോയ്സ് എന്നിവ അതിനു ശേഷം വെക്കുക. ചടങ്ങിനു മുമ്പ് ഗണപതിയെ പ്രാർത്ഥിച്ച് തേങ്ങ ഉടയ്ക്കുക.",
+          "ceremonyStepMl": "ഗണപതിയെ പ്രാർത്ഥിച്ച് തേങ്ങ ഉടച്ച് ആരംഭിക്കുക; വിഷ്ടി കഴിഞ്ഞ ശേഷം ശുദ്ധസമയമായ {clean} ൽ പ്രധാന കർമ്മങ്ങൾ ചെയ്യുക."
+        },
+        "vyatipata": {
+          "title": "Vyatipata / Vaidhriti yoga",
+          "whyOk": "Texts value these yogas for charity, prayer and ancestral rites, not for new ventures. Practitioners rarely accept them for a business launch, and only when every other factor is strong and the yoga is close to ending.",
+          "whyBad": "Vyatipata and Vaidhriti rank among the most inauspicious yogas for beginnings. They are linked to sudden reversals, disputes and loss of what was gained.",
+          "mitigation": "Choosing another slot or day is strongly recommended. If you must proceed, do the key acts after the yoga ends, and begin with a Vishnu Sahasranama recitation and a modest dana of food.",
+          "ceremonyStep": "Before the lamp, recite or play Vishnu Sahasranama and offer a modest dana of food or rice.",
+          "severity": "high",
+          "titleMl": "വ്യതീപാതം / വൈധൃതി യോഗം",
+          "whyOkMl": "ശാസ്ത്രങ്ങൾ ഈ യോഗങ്ങളെ ദാനം, പ്രാർത്ഥന, പിതൃകർമ്മങ്ങൾ എന്നിവയ്ക്കാണ് വിലമതിക്കുന്നത്, പുതിയ സംരംഭങ്ങൾക്കല്ല. ബിസിനസ് ഉദ്ഘാടനത്തിന് ജ്യോതിഷികൾ ഇവ അപൂർവമായേ സ്വീകരിക്കൂ; മറ്റെല്ലാ ഘടകങ്ങളും ശക്തമാവുകയും യോഗം അവസാനിക്കാറാവുകയും ചെയ്യുമ്പോൾ മാത്രം.",
+          "whyBadMl": "ആരംഭങ്ങൾക്ക് ഏറ്റവും അശുഭമായ യോഗങ്ങളിൽ പെട്ടവയാണ് വ്യതീപാതവും വൈധൃതിയും. പെട്ടെന്നുള്ള തിരിച്ചടികൾ, തർക്കങ്ങൾ, നേടിയത് നഷ്ടപ്പെടൽ എന്നിവയുമായി ഇവയെ ബന്ധപ്പെടുത്തുന്നു.",
+          "mitigationMl": "മറ്റൊരു മുഹൂർത്തമോ ദിവസമോ തിരഞ്ഞെടുക്കാൻ ശക്തമായി നിർദ്ദേശിക്കുന്നു. നിർബന്ധമാണെങ്കിൽ, യോഗം അവസാനിച്ച ശേഷം പ്രധാന കർമ്മങ്ങൾ ചെയ്യുക; വിഷ്ണുസഹസ്രനാമ പാരായണത്തോടെ തുടങ്ങി ചെറിയ തോതിൽ അന്നദാനം ചെയ്യുക.",
+          "ceremonyStepMl": "വിളക്ക് കൊളുത്തുന്നതിനു മുമ്പ് വിഷ്ണുസഹസ്രനാമം ചൊല്ലുകയോ കേൾക്കുകയോ ചെയ്ത് ചെറിയ തോതിൽ അന്നദാനമോ അരിദാനമോ നടത്തുക."
+        },
+        "chandrashtama": {
+          "title": "Chandrashtamam for promoter",
+          "whyOk": "Some practitioners give relief when the Moon is strong (waxing, or in its own or exalted sign) or when the lord of that 8th sign is friendly to the natal Moon. Since it is personal to the promoter, a partner without Chandrashtamam can perform the key acts.",
+          "whyBad": "When the Moon transits the 8th sign from your birth Moon, it is believed to bring mental strain, poor judgement and unexpected hurdles for you personally. In Kerala it is widely avoided for important beginnings.",
+          "mitigation": "Have a co-founder or family member without Chandrashtamam light the lamp and sign, or keep the promoter's role ceremonial. Offer a prayer to Goddess Durga or Bhagavathy and avoid making big commitments that day.",
+          "ceremonyStep": "Before the lamp, offer a prayer to Bhagavathy; let a partner without Chandrashtamam light the lamp and sign the first invoice if possible.",
+          "severity": "medium",
+          "titleMl": "ഉടമയ്ക്ക് ചന്ദ്രാഷ്ടമം",
+          "whyOkMl": "ചന്ദ്രൻ ബലവാനാണെങ്കിൽ (ശുക്ലപക്ഷം, അല്ലെങ്കിൽ സ്വക്ഷേത്രം, ഉച്ചം), അല്ലെങ്കിൽ ആ എട്ടാം രാശിയുടെ അധിപൻ ജന്മചന്ദ്രന്റെ മിത്രമാണെങ്കിൽ, ചില ജ്യോതിഷികൾ ഇളവ് നൽകാറുണ്ട്. ഇത് ഉടമയെ മാത്രം ബാധിക്കുന്നതിനാൽ, ചന്ദ്രാഷ്ടമം ഇല്ലാത്ത ഒരു പങ്കാളിക്ക് പ്രധാന കർമ്മങ്ങൾ ചെയ്യാം.",
+          "whyBadMl": "ജന്മരാശിയിൽ നിന്ന് എട്ടാം രാശിയിലൂടെ ചന്ദ്രൻ സഞ്ചരിക്കുമ്പോൾ നിങ്ങൾക്ക് വ്യക്തിപരമായി മാനസിക സമ്മർദ്ദം, തെറ്റായ തീരുമാനങ്ങൾ, അപ്രതീക്ഷിത തടസ്സങ്ങൾ എന്നിവ ഉണ്ടാകാമെന്നാണ് വിശ്വാസം. കേരളത്തിൽ പ്രധാന ആരംഭങ്ങൾക്ക് ഇത് വ്യാപകമായി ഒഴിവാക്കുന്നു.",
+          "mitigationMl": "ചന്ദ്രാഷ്ടമം ഇല്ലാത്ത ഒരു പങ്കാളിയോ കുടുംബാംഗമോ വിളക്ക് കൊളുത്തി ഒപ്പിടട്ടെ; അല്ലെങ്കിൽ ഉടമയുടെ പങ്ക് ചടങ്ങിൽ മാത്രമായി ഒതുക്കുക. ദുർഗ്ഗാദേവിയെയോ ഭഗവതിയെയോ പ്രാർത്ഥിക്കുക; അന്ന് വലിയ പ്രതിബദ്ധതകൾ ഏറ്റെടുക്കാതിരിക്കുക.",
+          "ceremonyStepMl": "വിളക്ക് കൊളുത്തുന്നതിനു മുമ്പ് ഭഗവതിയെ പ്രാർത്ഥിക്കുക; സാധിക്കുമെങ്കിൽ ചന്ദ്രാഷ്ടമം ഇല്ലാത്ത ഒരു പങ്കാളി വിളക്ക് കൊളുത്തി ആദ്യ ഇൻവോയ്സിൽ ഒപ്പിടട്ടെ."
+        },
+        "combust": {
+          "title": "Business karaka combust",
+          "whyOk": "Combustion weakens the planet's results rather than denying them, and many practitioners give it less weight for business than for marriage. If the planet is strong by sign or is moving out of combustion, it is commonly tolerated.",
+          "whyBad": "When the planet ruling your type of business is too close to the Sun, it is considered weakened. Traditionally this means its benefits, such as growth, deals or reputation, show up more slowly or with less force.",
+          "mitigation": "Worship the deity of that planet before starting: Jupiter - Dakshinamurthy or Guruvayurappan; Mercury - Vishnu; Venus - Lakshmi; Mars - Subrahmanya; Saturn - Ayyappa (Shasta). Light a lamp and give a small dana linked to that planet.",
+          "ceremonyStep": "Before the lamp, offer a prayer and a small dana to the deity of the combust business planet.",
+          "severity": "low",
+          "titleMl": "ബിസിനസ് കാരകഗ്രഹത്തിന് മൗഢ്യം",
+          "whyOkMl": "മൗഢ്യം ഗ്രഹത്തിന്റെ ഫലം ഇല്ലാതാക്കുകയല്ല, ദുർബലമാക്കുകയാണ് ചെയ്യുന്നത്; വിവാഹത്തെ അപേക്ഷിച്ച് ബിസിനസിൽ പല ജ്യോതിഷികളും ഇതിന് കുറഞ്ഞ പ്രാധാന്യമേ നൽകൂ. ഗ്രഹം രാശിബലമുള്ളതോ മൗഢ്യത്തിൽ നിന്ന് പുറത്തുവരുന്നതോ ആണെങ്കിൽ സാധാരണ സ്വീകരിക്കാറുണ്ട്.",
+          "whyBadMl": "നിങ്ങളുടെ ബിസിനസ് തരത്തിന്റെ കാരകഗ്രഹം സൂര്യനോട് വളരെ അടുത്താണെങ്കിൽ അതിന് ബലം കുറയുമെന്ന് കരുതുന്നു. വളർച്ച, ഇടപാടുകൾ, പ്രശസ്തി തുടങ്ങിയ അതിന്റെ ഗുണഫലങ്ങൾ വൈകിയോ കുറഞ്ഞ ശക്തിയിലോ ലഭിക്കും എന്നാണ് പരമ്പരാഗത അർത്ഥം.",
+          "mitigationMl": "തുടങ്ങുന്നതിനു മുമ്പ് ആ ഗ്രഹത്തിന്റെ ദേവതയെ ആരാധിക്കുക: വ്യാഴം - ദക്ഷിണാമൂർത്തി അല്ലെങ്കിൽ ഗുരുവായൂരപ്പൻ; ബുധൻ - വിഷ്ണു; ശുക്രൻ - ലക്ഷ്മി; ചൊവ്വ - സുബ്രഹ്മണ്യൻ; ശനി - അയ്യപ്പൻ (ശാസ്താവ്). വിളക്ക് കൊളുത്തി ആ ഗ്രഹവുമായി ബന്ധപ്പെട്ട ചെറിയ ദാനം നൽകുക.",
+          "ceremonyStepMl": "വിളക്ക് കൊളുത്തുന്നതിനു മുമ്പ് മൗഢ്യമുള്ള കാരകഗ്രഹത്തിന്റെ ദേവതയ്ക്ക് പ്രാർത്ഥനയും ചെറിയ ദാനവും അർപ്പിക്കുക."
+        },
+        "kp": {
+          "title": "KP 10th sub-lord unfavourable",
+          "whyOk": "This KP check is very sensitive to exact time and location, and it is not part of traditional Kerala muhurta. Many practitioners treat it as a secondary signal when the classical factors are good.",
+          "whyBad": "In KP, a 10th-cusp sub-lord that signifies the 8th or 12th house, without the 2nd, 10th or 11th, points to obstacles or expense in the venture's work and status. It suggests a weaker result on the career and profit side.",
+          "mitigation": "The sub-lord can change within a few minutes, so moving the signing or first invoice slightly earlier or later often clears it. Recheck the time in the app before you fix the final minute.",
+          "ceremonyStep": "Do the signing and first invoice at the exact minute recommended within the clean time {clean}.",
+          "severity": "low",
+          "titleMl": "KP 10-ാം ഭാവ ഉപനാഥൻ പ്രതികൂലം",
+          "whyOkMl": "ഈ KP പരിശോധന കൃത്യമായ സമയത്തെയും സ്ഥലത്തെയും വളരെയധികം ആശ്രയിക്കുന്നു; ഇത് പരമ്പരാഗത കേരള മുഹൂർത്തത്തിന്റെ ഭാഗമല്ല. ക്ലാസിക്കൽ ഘടകങ്ങൾ നല്ലതാണെങ്കിൽ പല ജ്യോതിഷികളും ഇതിനെ രണ്ടാംതരം സൂചനയായി മാത്രം കാണുന്നു.",
+          "whyBadMl": "KP യിൽ, 10-ാം ഭാവ ഉപനാഥൻ 2, 10, 11 ഭാവങ്ങളില്ലാതെ 8 അല്ലെങ്കിൽ 12 ഭാവങ്ങളെ സൂചിപ്പിക്കുന്നുവെങ്കിൽ, സംരംഭത്തിന്റെ പ്രവർത്തനത്തിലും നിലയിലും തടസ്സമോ ചെലവോ ഉണ്ടാകാം. തൊഴിൽ, ലാഭം എന്നീ കാര്യങ്ങളിൽ ദുർബലമായ ഫലം എന്നാണ് ഇതിന്റെ സൂചന.",
+          "mitigationMl": "ഉപനാഥൻ ഏതാനും മിനിറ്റുകൾക്കുള്ളിൽ മാറാം; അതിനാൽ ഒപ്പിടലോ ആദ്യ ഇൻവോയ്സോ അൽപ്പം നേരത്തെയോ വൈകിയോ ആക്കിയാൽ പലപ്പോഴും ദോഷം മാറും. അവസാന മിനിറ്റ് ഉറപ്പിക്കുന്നതിനു മുമ്പ് ആപ്പിൽ സമയം വീണ്ടും പരിശോധിക്കുക.",
+          "ceremonyStepMl": "ഒപ്പിടലും ആദ്യ ഇൻവോയ്സും ശുദ്ധസമയമായ {clean} ൽ നിർദ്ദേശിച്ച കൃത്യമായ മിനിറ്റിൽ ചെയ്യുക."
+        },
+        "voc": {
+          "title": "Void-of-course Moon (Western)",
+          "whyOk": "This is a Western astrology concept, not part of Jyotisha or Kerala muhurta, and many astrologers give it little weight. It is reasonable to proceed when the Vedic factors are good.",
+          "whyBad": "Western astrologers say that things begun while the Moon is void of course tend to lead nowhere or end up differently than planned. It suggests launches that fizzle out or plans that have to be changed.",
+          "mitigation": "If the void period ends during the slot, place the signing and first invoice after it ends. Otherwise, simply keep clear written plans and follow up actively after the launch.",
+          "ceremonyStep": "Do the signing and first invoice within the clean time {clean}, after the void-of-course period ends.",
+          "severity": "low",
+          "titleMl": "ശൂന്യഗതി ചന്ദ്രൻ (പാശ്ചാത്യം)",
+          "whyOkMl": "ഇത് പാശ്ചാത്യ ജ്യോതിഷത്തിലെ ആശയമാണ്, ഭാരതീയ ജ്യോതിഷത്തിന്റെയോ കേരള മുഹൂർത്തത്തിന്റെയോ ഭാഗമല്ല; പല ജ്യോതിഷികളും ഇതിന് ചെറിയ പ്രാധാന്യമേ നൽകൂ. ഭാരതീയ ഘടകങ്ങൾ നല്ലതാണെങ്കിൽ മുന്നോട്ടുപോകുന്നത് യുക്തമാണ്.",
+          "whyBadMl": "ചന്ദ്രൻ ശൂന്യഗതിയിലായിരിക്കുമ്പോൾ തുടങ്ങുന്ന കാര്യങ്ങൾ എങ്ങുമെത്താതെ പോകുകയോ ഉദ്ദേശിച്ചതിൽ നിന്ന് വ്യത്യസ്തമായി അവസാനിക്കുകയോ ചെയ്യാമെന്ന് പാശ്ചാത്യ ജ്യോതിഷികൾ പറയുന്നു. ഉദ്ഘാടനം മങ്ങിപ്പോകുകയോ പദ്ധതികൾ മാറ്റേണ്ടിവരികയോ ചെയ്യാം എന്നാണ് സൂചന.",
+          "mitigationMl": "മുഹൂർത്തത്തിനിടയിൽ ശൂന്യഗതി അവസാനിക്കുന്നുവെങ്കിൽ, ഒപ്പിടലും ആദ്യ ഇൻവോയ്സും അതിനു ശേഷം വെക്കുക. അല്ലാത്തപക്ഷം, വ്യക്തമായ രേഖാമൂലമുള്ള പദ്ധതി സൂക്ഷിച്ച് ഉദ്ഘാടനത്തിനു ശേഷം സജീവമായി തുടർനടപടികൾ എടുക്കുക.",
+          "ceremonyStepMl": "ശൂന്യഗതി കാലം കഴിഞ്ഞ ശേഷം ശുദ്ധസമയമായ {clean} ൽ ഒപ്പിടലും ആദ്യ ഇൻവോയ്സും ചെയ്യുക."
+        },
+        "bazi": {
+          "title": "BaZi day clash (Chinese)",
+          "whyOk": "This comes from the Chinese system and is not part of Vedic or Kerala muhurta. It concerns only the promoter's birth-year branch, so most Jyotishis would not reject an otherwise good slot because of it.",
+          "whyBad": "In BaZi, a day branch that clashes with your birth-year branch (Liu Chong) is said to bring friction, instability or disruption to plans begun that day. It suggests extra effort is needed to keep things on track.",
+          "mitigation": "Where possible, let a partner whose birth year does not clash do the signing or first invoice. Otherwise, proceed calmly and avoid confrontational negotiations on the day.",
+          "ceremonyStep": "If possible, let a partner whose birth year does not clash with the day sign the first invoice within the clean time {clean}.",
+          "severity": "low",
+          "titleMl": "ബാസി ദിനസംഘർഷം (ചൈനീസ്)",
+          "whyOkMl": "ഇത് ചൈനീസ് സമ്പ്രദായത്തിൽ നിന്നുള്ളതാണ്, ഭാരതീയ ജ്യോതിഷത്തിന്റെയോ കേരള മുഹൂർത്തത്തിന്റെയോ ഭാഗമല്ല. ഉടമയുടെ ജനനവർഷ ശാഖയെ മാത്രം ബാധിക്കുന്നതിനാൽ, മറ്റെല്ലാ രീതിയിലും നല്ല ഒരു മുഹൂർത്തം ഇതുകൊണ്ട് മിക്ക ജ്യോതിഷികളും തള്ളിക്കളയില്ല.",
+          "whyBadMl": "ബാസി സമ്പ്രദായത്തിൽ, ദിനശാഖ നിങ്ങളുടെ ജനനവർഷ ശാഖയുമായി സംഘർഷത്തിലാണെങ്കിൽ (ലിയു ചോങ്), അന്ന് തുടങ്ങുന്ന പദ്ധതികൾക്ക് ഘർഷണം, അസ്ഥിരത, തടസ്സം എന്നിവ ഉണ്ടാകാമെന്നാണ് പറയുന്നത്. കാര്യങ്ങൾ ശരിയായ വഴിക്ക് നിലനിർത്താൻ കൂടുതൽ ശ്രമം വേണ്ടിവരും എന്നാണ് സൂചന.",
+          "mitigationMl": "സാധിക്കുമെങ്കിൽ, ജനനവർഷം സംഘർഷത്തിലല്ലാത്ത ഒരു പങ്കാളി ഒപ്പിടലോ ആദ്യ ഇൻവോയ്സോ ചെയ്യട്ടെ. അല്ലാത്തപക്ഷം ശാന്തമായി മുന്നോട്ടുപോകുക; അന്ന് ഏറ്റുമുട്ടൽ സ്വഭാവമുള്ള ചർച്ചകൾ ഒഴിവാക്കുക.",
+          "ceremonyStepMl": "സാധിക്കുമെങ്കിൽ, ജനനവർഷം ഈ ദിവസവുമായി സംഘർഷത്തിലല്ലാത്ത ഒരു പങ്കാളി ശുദ്ധസമയമായ {clean} ൽ ആദ്യ ഇൻവോയ്സിൽ ഒപ്പിടട്ടെ."
+        }
+      },
+      "headingRelaxed": {
+        "en": "Recommended Launch Sequence (with precautions)",
+        "ml": "ശുപാർശ ചെയ്യുന്ന ഉദ്ഘാടന ക്രമം (മുൻകരുതലുകളോടെ)"
+      },
+      "introRelaxed": {
+        "en": "Because some rules were relaxed for this muhurtham, do the listed remedies first and keep the lamp lighting, signing and first invoice within the clean time.",
+        "ml": "ഈ മുഹൂർത്തത്തിൽ ചില നിയമങ്ങളിൽ ഇളവ് വരുത്തിയതിനാൽ, താഴെ പറയുന്ന പരിഹാരങ്ങൾ ആദ്യം ചെയ്യുക; വിളക്ക് കൊളുത്തൽ, ഒപ്പിടൽ, ആദ്യ ഇൻവോയ്സ് എന്നിവ ശുദ്ധസമയത്തിനുള്ളിൽ തന്നെ ചെയ്യുക."
+      },
+      "introHigh": {
+        "en": "At least one relaxed rule is traditionally considered serious, so if possible choose another slot, or consult a Jyotishi before you go ahead.",
+        "ml": "ഇളവ് വരുത്തിയ നിയമങ്ങളിൽ ഒന്നെങ്കിലും പരമ്പരാഗതമായി ഗൗരവമുള്ളതായി കണക്കാക്കുന്നു; അതിനാൽ സാധിക്കുമെങ്കിൽ മറ്റൊരു മുഹൂർത്തം തിരഞ്ഞെടുക്കുക, അല്ലെങ്കിൽ മുന്നോട്ടുപോകുന്നതിനു മുമ്പ് ഒരു ജ്യോതിഷിയെ സമീപിക്കുക."
+      }
+    };
+
+    // Rules this muhurtham breaks but was kept anyway (rule omitted in Step 2, or single-day check),
+    // in display order; keys index RELAXED_RULE_GUIDANCE
+    function getRelaxedRuleKeys(cand) {
+      const o = cand.omissions || {};
+      const keys = [];
+      const vedic = o.sysVedic !== false;
+      if (vedic && cand.hasRahuOverlap) keys.push("rahu");
+      if (vedic && cand.hasGulikaOverlap) keys.push("gulika");
+      if (vedic && cand.hasYamaOverlap) keys.push("yama");
+      if (vedic && cand.taraVeto) keys.push("tara");
+      const qv = (cand.quality && cand.quality.vetoes) || [];
+      if (vedic && qv.includes("Amavasya")) keys.push("amavasya");
+      if (vedic && qv.includes("Vishti (Bhadra) karana")) keys.push("vishti");
+      if (vedic && qv.some(v => /Vyatipata|Vaidhriti/.test(v))) keys.push("vyatipata");
+      if (vedic && qv.includes("Chandrashtama")) keys.push("chandrashtama");
+      if (vedic && cand.isMasaSankramana) keys.push("sankramana");
+      if (vedic && cand.hasMaleficIn8th) keys.push("ashtama");
+      if (vedic && cand.isKarakaCombust) keys.push("combust");
+      if (o.sysKP !== false && cand.isKpNegated) keys.push("kp");
+      if (o.sysWestern !== false && cand.isVoc) keys.push("voc");
+      if (o.sysBaZi !== false && cand.isBaziBreaker) keys.push("bazi");
+      return keys.filter(k => RELAXED_RULE_GUIDANCE.rules[k]);
     }
 
     // Longest clean sub-window of a slot (minutes), or null when the whole slot is afflicted
@@ -3811,7 +4080,7 @@
               : (!hasMaleficIn8th ? `Benefic Occupancy (${planetsIn8th.map(([p])=>p.toUpperCase()).join(", ")})` : `Afflicted by Malefic (${maleficsIn8th.map(([p])=>p.toUpperCase()).join(", ")})`),
             ashtamaStatusMl: isAshtamaPure
               ? "പൂർണ്ണ ശുദ്ധി (ഗ്രഹങ്ങളില്ല)"
-              : (!hasMaleficIn8th ? `ശുഭഗ്രഹ സാന്നിധ്യം (${planetsIn8th.map(([p])=>p.toUpperCase()).join(", ")})` : `പാപഗ്രഹ ബാധ (${maleficsIn8th.map(([p])=>p.toUpperCase()).join(", ")})`),
+              : (!hasMaleficIn8th ? `ശുഭഗ്രഹ സാന്നിധ്യം (${planetsIn8th.map(([p])=>PLANET_NAMES_ML[p]).join(", ")})` : `പാപഗ്രഹ ബാധ (${maleficsIn8th.map(([p])=>PLANET_NAMES_ML[p]).join(", ")})`),
             ashtamaDesc: isAshtamaPure
               ? `No planets occupy the 8th house (${RASHI_NAMES[eighthHouseRashiIdx]}), guarding against sudden operational crises.`
               : (!hasMaleficIn8th ? `8th house (${RASHI_NAMES[eighthHouseRashiIdx]}) occupied by natural benefic (${planetsIn8th.map(([p])=>p.toUpperCase()).join(", ")}) without malefic affliction.` : `Malefic planets in 8th house require mitigation.`),
@@ -3819,7 +4088,7 @@
               ? `ലഗ്നത്തിന്റെ എട്ടാം ഭാവത്തിൽ ഗ്രഹങ്ങളൊന്നുമില്ല. ബിസിനസ്സ് തടസ്സങ്ങളിൽ നിന്ന് പൂർണ്ണ സംരക്ഷണം.`
               : (!hasMaleficIn8th ? `എട്ടാം ഭാവത്തിൽ ശുഭഗ്രഹ സാന്നിധ്യം. പാപബാധയില്ല.` : `എട്ടാം ഭാവത്തിൽ പാപഗ്രഹ സാന്നിധ്യമുണ്ട്.`),
             gulikaStatus: hasGulikaOverlap ? "Gulika Overlap (Careful)" : "Completely Free & Non-Overlapping",
-            gulikaStatusMl: hasGulikaOverlap ? "ഗുളികകാല സമ്പർക്കം" : "ദോഷരഹിതം (ഒഴിവാക്കപ്പെട്ടു)",
+            gulikaStatusMl: hasGulikaOverlap ? "ഗുളികകാല സമ്പർക്കം" : "ദോഷരഹിതം",
             gulikaDesc: kalamDesc("gulika", "Gulika Kalam", gulikaWindowStr),
             gulikaDescMl: kalamDescMl("gulika", "ഗുളികകാലം", gulikaWindowStr),
             rahuStatus: hasRahuOverlap ? "Rahu Kalam Overlap" : "Completely Free & Unafflicted",
@@ -3837,7 +4106,7 @@
             sankramanaStatus: isMasaSankramana ? "Masa Sankramana Transition" : "Pure Solar Stability",
             sankramanaStatusMl: isMasaSankramana ? "മാസസംക്രമണ സന്ധി" : "ശുദ്ധ സൗരസ്ഥിതി",
             kpSubLordInfo: `${kpResult.subLord} (Star: ${kpResult.starLord}) ruling Houses ${kpResult.signifiedHouses}`,
-            kpSubLordInfoMl: `${kpResult.subLordMl} (നക്ഷത്രാധിപൻ: ${kpResult.starLord}) ഭാവങ്ങൾ: ${kpResult.signifiedHouses}`,
+            kpSubLordInfoMl: `${kpResult.subLordMl} (നക്ഷത്രാധിപൻ: ${kpResult.starLordMl}) ഭാവങ്ങൾ: ${kpResult.signifiedHouses}`,
             kpSubLordDesc: `In KP System, 10th cuspal sub-lord ${kpResult.subLord} connects with houses ${kpResult.signifiedHouses} from election Lagna.`,
             kpSubLordDescMl: `കെ.പി. സിസ്റ്റം പ്രകാരം പത്താം ഉപനാഥനായ ${kpResult.subLordMl} ${kpResult.signifiedHouses} ഭാവങ്ങളുമായി ശുഭബന്ധം പുലർത്തുന്നു.`,
             westernAspectInfo: westAspect.text,
@@ -3849,9 +4118,9 @@
               ? `പാശ്ചാത്യ തിരഞ്ഞെടുപ്പ് പ്രകാരം ചന്ദ്രൻ ശൂന്യപഥത്തിലാണ് (Void of Course).`
               : `പാശ്ചാത്യ തിരഞ്ഞെടുപ്പ് പ്രകാരം ചന്ദ്രന്റെ അനുകൂല ദൃഷ്ടി. ചന്ദ്രൻ ശൂന്യപഥത്തിലല്ല.`,
             qmdjInfo: `${qmdjDoor.name} in ${qmdjDoor.dir}`,
-            qmdjInfoMl: `${qmdjDoor.nameMl} (${qmdjDoor.dir})`,
+            qmdjInfoMl: `${qmdjDoor.nameMl} (${qmdjDoor.dirMl})`,
             qmdjDesc: `${qmdjDoor.nature}. Direction ${qmdjDoor.dir} brings strategic resonance.`,
-            qmdjDescMl: `${qmdjDoor.nameMl}: പുതിയ സംരംഭങ്ങൾക്കും ഓഫീസിനും വിശിഷ്ടമായ ദിശ.`,
+            qmdjDescMl: `${qmdjDoor.natureMl}. ദിശ: ${qmdjDoor.dirMl}.`,
             hasGulikaOverlap: hasGulikaOverlap,
             hasRahuOverlap: hasRahuOverlap,
             hasYamaOverlap: hasYamaOverlap,
@@ -4585,7 +4854,7 @@
         const title = document.createElement("div");
         title.style.fontWeight = "700";
         title.style.fontSize = "1.1rem";
-        title.textContent = isMl ? `മുഹൂർത്ത ക്രമം #${idx + 1}: ${cand.dateDisplay}` : `Rank #${idx + 1}: ${cand.dateDisplay}`;
+        title.textContent = isMl ? `മുഹൂർത്ത ക്രമം #${idx + 1}: ${formatDateMl(cand.dateObj)}` : `Rank #${idx + 1}: ${cand.dateDisplay}`;
 
         const sub = document.createElement("div");
         sub.style.fontSize = "0.85rem";
@@ -4621,7 +4890,8 @@
         scoreBadge.className = "candidate-score-badge " + (cand.score >= 85 ? "high" : "medium");
         const gradeLabel = document.createElement("div");
         gradeLabel.className = "score-grade";
-        gradeLabel.textContent = cand.grade || getScoreGrade(cand.score);
+        const gradeEn = cand.grade || getScoreGrade(cand.score);
+        gradeLabel.textContent = isMl ? GRADE_NAMES_ML[gradeEn] : gradeEn;
         headerRight.appendChild(scoreBadge);
         headerRight.appendChild(gradeLabel);
         headerRight.appendChild(rejectBtn);
@@ -4664,12 +4934,14 @@
         const qualityRows = !qual ? [] : [
           {
             key: isMl ? "പഞ്ചാംഗ ശുദ്ധി" : "Panchanga Shuddhi",
-            val: `${getTithiName(qual.tithiIdx)} · ${YOGA_NAMES[qual.yogaIdx]} ${isMl ? "യോഗം" : "yoga"} · ${getKaranaName(qual.karanaIdx)} ${isMl ? "കരണം" : "karana"}`,
+            val: isMl
+              ? `${getTithiNameMl(qual.tithiIdx)} · ${YOGA_NAMES_ML[qual.yogaIdx]} യോഗം · ${KARANA_NAMES_ML[getKaranaName(qual.karanaIdx)]} കരണം`
+              : `${getTithiName(qual.tithiIdx)} · ${YOGA_NAMES[qual.yogaIdx]} yoga · ${getKaranaName(qual.karanaIdx)} karana`,
             desc: (isMl ? "പോയിന്റുകൾ: " : "Points: ") +
               `${isMl ? "തിഥി" : "tithi"} ${fmtPts(qual.parts.tithi)}, ${isMl ? "വാരം" : "weekday"} ${fmtPts(qual.parts.vara)}, ` +
               `${isMl ? "നക്ഷത്രം" : "nakshatra class"} ${fmtPts(qual.parts.nakshatra)}, ${isMl ? "യോഗം" : "yoga"} ${fmtPts(qual.parts.yoga)}, ` +
               `${isMl ? "കരണം" : "karana"} ${fmtPts(qual.parts.karana)}` +
-              (qual.vetoes.length ? ` · ${isMl ? "ദോഷം" : "Dosha"}: ${qual.vetoes.join(", ")}` : ""),
+              (qual.vetoes.length ? ` · ${isMl ? "ദോഷം" : "Dosha"}: ${(isMl ? qual.vetoes.map(v => PANCHANGA_VETO_ML[v] || v) : qual.vetoes).join(", ")}` : ""),
             color: qual.vetoes.length ? "red" : ptsColor(qual.parts.tithi + qual.parts.vara + qual.parts.nakshatra + qual.parts.yoga + qual.parts.karana, 15, 0),
             isOmitted: qual.vetoes.length > 0 && Boolean(o.omitPanchanga),
             omittedLabel: isMl ? "പഞ്ചാംഗ ദോഷം ഒഴിവാക്കപ്പെട്ടു" : "Panchanga veto omitted in Step 2"
@@ -4790,7 +5062,7 @@
             omittedLabel: isMl ? "മാസസംക്രമണം ഒഴിവാക്കപ്പെട്ടു" : "Omitted in Step 2"
           },
           {
-            key: isMl ? "കെ.പി. ദശാപതി (10th Sub-Lord)" : "KP 10th Cuspal Sub-Lord",
+            key: isMl ? "കെ.പി. 10-ാം ഭാവ ഉപനാഥൻ" : "KP 10th Cuspal Sub-Lord",
             val: isMl ? cand.kpSubLordInfoMl : cand.kpSubLordInfo,
             desc: isMl ? cand.kpSubLordDescMl : cand.kpSubLordDesc,
             color: !o.sysKP ? "amber" : (cand.isKpNegated ? "red" : "green"),
@@ -4958,10 +5230,14 @@
         const formatMinutes = (mins) => {
           let h = Math.floor(mins / 60);
           const m = mins % 60;
-          const ampm = h >= 12 ? "PM" : "AM";
           const h12 = h % 12 || 12;
           const pad = (n) => n.toString().padStart(2, '0');
-          return `${pad(h12)}:${pad(m)} ${ampm}`;
+          if (isMl) {
+            // Malayalam day-part prefix: രാവിലെ (morning), ഉച്ചയ്ക്ക് (midday), വൈകുന്നേരം (evening)
+            const part = h < 12 ? "രാവിലെ" : (h < 16 ? "ഉച്ചയ്ക്ക്" : "വൈകുന്നേരം");
+            return `${part} ${pad(h12)}:${pad(m)}`;
+          }
+          return `${pad(h12)}:${pad(m)} ${h >= 12 ? "PM" : "AM"}`;
         };
 
         const startMin = parseMinutes(startStr);
@@ -4994,7 +5270,75 @@
           ul.appendChild(l2);
           ul.appendChild(l3);
         }
+        // Rules this muhurtham breaks (kept via Step 2 omission or single-day check): explain and adapt the plan
+        const G = RELAXED_RULE_GUIDANCE;
+        const relaxedKeys = getRelaxedRuleKeys(cand);
+        const cleanForSteps = bestClean ? bestClean.text : cand.timeWindow;
+        const hasHighSeverity = relaxedKeys.some(k => G.rules[k].severity === "high");
+        let relaxedBox = null;
+        if (relaxedKeys.length) {
+          relaxedBox = document.createElement("div");
+          relaxedBox.className = "relaxed-rules" + (hasHighSeverity ? " high" : "");
+          const rbTitle = document.createElement("div");
+          rbTitle.className = "relaxed-rules-title";
+          rbTitle.textContent = isMl ? `ഇളവ് വരുത്തിയ നിയമങ്ങൾ (${relaxedKeys.length})` : `Rules relaxed for this muhurtham (${relaxedKeys.length})`;
+          relaxedBox.appendChild(rbTitle);
+          const sevLabel = { low: isMl ? "ചെറുത്" : "Low", medium: isMl ? "മധ്യമം" : "Medium", high: isMl ? "ഗൗരവം" : "High" };
+          relaxedKeys.forEach(k => {
+            const g = G.rules[k];
+            const item = document.createElement("div");
+            item.className = "relaxed-rule";
+            const head = document.createElement("div");
+            head.className = "relaxed-rule-head";
+            const name = document.createElement("span");
+            name.textContent = isMl ? g.titleMl : g.title;
+            const sev = document.createElement("span");
+            sev.className = `relaxed-sev relaxed-sev-${g.severity}`;
+            sev.textContent = sevLabel[g.severity];
+            head.appendChild(name);
+            head.appendChild(sev);
+            item.appendChild(head);
+            [[isMl ? "എന്തുകൊണ്ട് സ്വീകാര്യമാകാം" : "Why it may be acceptable", isMl ? g.whyOkMl : g.whyOk],
+             [isMl ? "എന്തുകൊണ്ട് പ്രധാനം" : "Why it matters", isMl ? g.whyBadMl : g.whyBad],
+             [isMl ? "എന്ത് ചെയ്യണം" : "What to do", isMl ? g.mitigationMl : g.mitigation]].forEach(([label, text]) => {
+              const line = document.createElement("div");
+              line.className = "relaxed-rule-line";
+              const b = document.createElement("strong");
+              b.textContent = label + ": ";
+              line.appendChild(b);
+              line.appendChild(document.createTextNode(text));
+              item.appendChild(line);
+            });
+            relaxedBox.appendChild(item);
+          });
+
+          // Ceremony wording: precautions heading, intro, and remedy steps before the lamp
+          actionTitle.textContent = (isMl ? G.headingRelaxed.ml : G.headingRelaxed.en) + ":";
+          const remedySteps = [];
+          relaxedKeys.forEach(k => {
+            const step = (isMl ? G.rules[k].ceremonyStepMl : G.rules[k].ceremonyStep).replace("{clean}", cleanForSteps);
+            if (!remedySteps.includes(step)) remedySteps.push(step);
+          });
+          remedySteps.reverse().forEach(step => {
+            const li = document.createElement("li");
+            li.className = "remedy-step";
+            li.textContent = step;
+            ul.insertBefore(li, ul.firstChild);
+          });
+        }
         actionBox.appendChild(actionTitle);
+        if (relaxedKeys.length) {
+          const intro = document.createElement("div");
+          intro.className = "relaxed-intro";
+          intro.textContent = isMl ? G.introRelaxed.ml : G.introRelaxed.en;
+          actionBox.appendChild(intro);
+          if (hasHighSeverity) {
+            const introHigh = document.createElement("div");
+            introHigh.className = "relaxed-intro high";
+            introHigh.textContent = "⚠ " + (isMl ? G.introHigh.ml : G.introHigh.en);
+            actionBox.appendChild(introHigh);
+          }
+        }
         if (cand.kalamOverlaps && cand.kalamOverlaps.length) {
           const planNote = document.createElement("div");
           planNote.className = "slot-clean-note";
@@ -5008,10 +5352,61 @@
         card.appendChild(header);
         card.appendChild(kundaliWrapper);
         card.appendChild(table);
+        if (relaxedBox) card.appendChild(relaxedBox);
         card.appendChild(actionBox);
 
         container.appendChild(card);
       });
+      scheduleScrutinyAlignment();
+    }
+
+    // Keep the same label at the same height across side-by-side Step 4 cards: header, chart and
+    // each Panchanga row are stretched to the tallest one among cards sharing a visual row
+    function alignScrutinyCards() {
+      const container = document.getElementById("scrutinyContainer");
+      if (!container || !container.offsetParent) return; // hidden (Step 4 not shown yet)
+      const cards = [...container.querySelectorAll(".scrutiny-card")];
+      const partsOf = (card) => [
+        card.querySelector(".scrutiny-header"),
+        card.querySelector(".kundali-wrapper"),
+        ...card.querySelectorAll(".panchanga-table tr")
+      ];
+      cards.forEach(card => partsOf(card).forEach(el => { if (el) { el.style.minHeight = ""; el.style.height = ""; } }));
+      const rows = new Map();
+      cards.forEach(card => {
+        const top = Math.round(card.getBoundingClientRect().top);
+        if (!rows.has(top)) rows.set(top, []);
+        rows.get(top).push(card);
+      });
+      rows.forEach(group => {
+        if (group.length < 2) return;
+        const lists = group.map(partsOf);
+        const n = Math.min(...lists.map(l => l.length));
+        for (let i = 0; i < n; i++) {
+          const max = Math.max(...lists.map(l => (l[i] ? l[i].getBoundingClientRect().height : 0)));
+          lists.forEach(l => {
+            if (!l[i]) return;
+            if (l[i].tagName === "TR") l[i].style.height = `${max}px`;
+            else l[i].style.minHeight = `${max}px`;
+          });
+        }
+      });
+    }
+
+    // setTimeout rather than requestAnimationFrame: rAF is paused in background tabs/panes
+    function scheduleScrutinyAlignment() {
+      setTimeout(alignScrutinyCards, 0);
+    }
+
+    if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+      let alignTimer = null;
+      window.addEventListener("resize", () => {
+        clearTimeout(alignTimer);
+        alignTimer = setTimeout(alignScrutinyCards, 150);
+      });
+      if (typeof document.addEventListener === "function") {
+        document.addEventListener("visibilitychange", () => { if (!document.hidden) alignScrutinyCards(); });
+      }
     }
 
     // Programmatic SVG South Indian Kundali Creator (Fixed 12 Rashi Layout with Planets)
