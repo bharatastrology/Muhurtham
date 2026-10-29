@@ -2015,6 +2015,7 @@
 
     function validateDateInput(inputEl) {
       if (!inputEl || !inputEl.value) return;
+      markSearchSettingsChanged(); // quick-range buttons set dates in code
       const parts = inputEl.value.split("-");
       if (parts.length === 3) {
         let year = parseInt(parts[0], 10);
@@ -2077,6 +2078,12 @@
     // Wizard Navigation
     let currentStep = 1;
     function goToStep(step) {
+      // Inputs changed since the last search: recalculate (ticks kept), then show the requested step
+      if ((step === 3 || step === 4) && searchSettingsChanged && lastCalcInfo) {
+        calculateMuhurthamFast(); // clears the flag and lands on Step 3
+        if (step === 4 && selectedCandidates.size > 0) proceedToDeepDive();
+        return;
+      }
       if (step === 4 && selectedCandidates.size === 0) {
         alert("Please select at least one candidate slot from Step 3 to view deep scrutiny.");
         return;
@@ -2209,6 +2216,7 @@
 
     // Preset Rules Handler with Active Visual State & Button Feedback
     function applyRulePreset(preset) {
+      markSearchSettingsChanged(); // presets set checkboxes in code, which fires no change event
       const allPresets = ["orthodox", "pragmatic", "tech", "relax", "reset"];
       allPresets.forEach(p => {
         const btn = document.getElementById("btnPreset_" + p);
@@ -2413,7 +2421,18 @@
     }
 
     // Attach change listeners to all Step 2 checkboxes & Step 1 systems for real-time sync
+    // Results become out of date when any Step 1 / Step 2 input changes; Step 3 and Step 4
+    // re-run the search (keeping ticks) the next time they are opened
+    let searchSettingsChanged = false;
+    function markSearchSettingsChanged() {
+      if (lastCalcInfo) searchSettingsChanged = true;
+    }
+
     function initRuleCheckboxListeners() {
+      ["panel1", "panel2"].forEach(id => {
+        const panel = document.getElementById(id);
+        if (panel) panel.addEventListener("change", markSearchSettingsChanged);
+      });
       const allRuleIds = [
         "omitRahuKalam", "omitGulikaKalam", "omitYamagandam", "omitMasaSankramana",
         "omitAshtamaShuddhi", "omitVadhaTara", "omitVocMoon", "omitKpNegation",
@@ -2998,7 +3017,9 @@
       const hh = String(lastCalcInfo.time.getHours()).padStart(2, "0");
       const mm = String(lastCalcInfo.time.getMinutes()).padStart(2, "0");
       const ss = String(lastCalcInfo.time.getSeconds()).padStart(2, "0");
-      return `Results recalculated at ${hh}:${mm}:${ss} with ${lastCalcInfo.engine} (${lastCalcInfo.count} slot${lastCalcInfo.count === 1 ? "" : "s"}).`;
+      const dropped = lastCalcInfo.droppedShortlisted || 0;
+      return `Results recalculated at ${hh}:${mm}:${ss} with ${lastCalcInfo.engine} (${lastCalcInfo.count} slot${lastCalcInfo.count === 1 ? "" : "s"}).` +
+        (dropped ? ` ${dropped} shortlisted slot${dropped === 1 ? " is" : "s are"} no longer in the results with the current settings and ${dropped === 1 ? "was" : "were"} unticked.` : "");
     }
     function appendLastCalcLine(textDiv) {
       const text = getLastCalcText();
@@ -3851,6 +3872,7 @@
       const isSingleDay = startStr === endStr;
       const dayDiff = isSingleDay ? 1 : Math.max(1, Math.round((endDate - startDate) / (1000 * 60 * 60 * 24)));
 
+      searchSettingsChanged = false;
       // Ticks and Step 4 rejections survive a recalculation for slots that are still in the new list
       const previouslySelected = new Set(selectedCandidates);
       const previouslyRejected = new Set(rejectedCandidates);
@@ -4287,6 +4309,7 @@
         if (previouslySelected.has(c.id) && selectedCandidates.size < 5) selectedCandidates.add(c.id);
         if (previouslyRejected.has(c.id)) rejectedCandidates.add(c.id);
       });
+      lastCalcInfo.droppedShortlisted = [...previouslySelected].filter(id => !selectedCandidates.has(id)).length;
 
       // Update Fallback Notice Banners
       updateFallbackBanners();
