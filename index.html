@@ -2991,10 +2991,111 @@
       updateFallbackBanners();
     }
 
+    // Last search run, shown in the engine banners so an engine switch visibly recalculates
+    let lastCalcInfo = null;
+    function getLastCalcText() {
+      if (!lastCalcInfo) return "";
+      const hh = String(lastCalcInfo.time.getHours()).padStart(2, "0");
+      const mm = String(lastCalcInfo.time.getMinutes()).padStart(2, "0");
+      const ss = String(lastCalcInfo.time.getSeconds()).padStart(2, "0");
+      return `Results recalculated at ${hh}:${mm}:${ss} with ${lastCalcInfo.engine} (${lastCalcInfo.count} slot${lastCalcInfo.count === 1 ? "" : "s"}).`;
+    }
+    function appendLastCalcLine(textDiv) {
+      const text = getLastCalcText();
+      if (!text) return;
+      const line = document.createElement("div");
+      line.style.fontSize = "0.75rem";
+      line.style.color = "var(--ba-text-muted)";
+      line.style.marginTop = "0.15rem";
+      line.textContent = "✓ " + text;
+      textDiv.appendChild(line);
+    }
+
+    // Internal engine chosen in the engine switcher (not a fallback because Swiss Ephemeris failed)
+    function isInternalEngineChosen() {
+      return SWISSEPH_CONFIG.mode === "INTERNAL_ONLY";
+    }
+
     function isFallbackActive() {
+      if (isInternalEngineChosen()) return false;
       if (SWISSEPH_CONFIG.status !== "READY_SWISSEPH") return true;
       if (generatedCandidates && generatedCandidates.length > 0 && generatedCandidates.some(c => !c.isSwissEph)) return true;
       return false;
+    }
+
+    // Recalculate the search; when the user was reviewing the dossier, return to Step 4
+    // (calculateMuhurthamFast always lands on Step 3)
+    function recalculateKeepingStep() {
+      const wasOnStep4 = currentStep === 4;
+      calculateMuhurthamFast();
+      if (wasOnStep4 && selectedCandidates.size > 0) proceedToDeepDive();
+    }
+
+    // From Internal Only: switch back to Auto (Swiss Ephemeris) and recalculate
+    async function redoWithSwissEphemeris() {
+      SWISSEPH_CONFIG.mode = "AUTO";
+      if (SWISSEPH_CONFIG.status === "READY_SWISSEPH") {
+        updateEphemerisUI();
+        recalculateKeepingStep();
+        updateFallbackBanners();
+      } else {
+        await retrySwissEphemerisAndRecalculate();
+      }
+    }
+
+    // Positive banner for a deliberately chosen internal engine, with a Swiss Ephemeris redo option
+    function fillInternalChosenBanner(banner, withAudit) {
+      banner.textContent = "";
+      banner.style.display = "flex";
+      banner.style.background = "rgba(14, 165, 233, 0.08)";
+      banner.style.border = "1px solid rgba(14, 165, 233, 0.35)";
+      banner.style.borderLeft = "4px solid #0ea5e9";
+
+      const leftBox = document.createElement("div");
+      leftBox.style.display = "flex";
+      leftBox.style.alignItems = "center";
+      leftBox.style.gap = "0.75rem";
+      leftBox.style.flexWrap = "wrap";
+      const icon = document.createElement("span");
+      icon.style.fontSize = "1.25rem";
+      icon.textContent = "🧮";
+      const textDiv = document.createElement("div");
+      const titleDiv = document.createElement("div");
+      titleDiv.style.fontWeight = "700";
+      titleDiv.style.color = "var(--ba-text-main)";
+      titleDiv.textContent = "Internal Ephemeris selected: fast, fully offline and verified";
+      const subDiv = document.createElement("div");
+      subDiv.style.fontSize = "0.8rem";
+      subDiv.style.color = "var(--ba-text-muted)";
+      subDiv.textContent = "Benchmarked against Swiss Ephemeris: Sun, Moon, Mercury, Venus, Mars and Rahu/Ketu within 0.02°, Jupiter and Saturn within 0.2°, Lagna within 0.01° and sunrise within half a minute. Tithi, nakshatra, yoga and lagna sign matched Swiss Ephemeris in every benchmark case.";
+      textDiv.appendChild(titleDiv);
+      textDiv.appendChild(subDiv);
+      appendLastCalcLine(textDiv);
+      leftBox.appendChild(icon);
+      leftBox.appendChild(textDiv);
+
+      const rightBox = document.createElement("div");
+      rightBox.style.display = "flex";
+      rightBox.style.alignItems = "center";
+      rightBox.style.gap = "0.5rem";
+      const swissBtn = document.createElement("button");
+      swissBtn.type = "button";
+      swissBtn.className = "btn btn-secondary btn-sm";
+      swissBtn.textContent = "🪐 Redo with Swiss Ephemeris";
+      swissBtn.title = "Switch the engine back to Swiss Ephemeris (Auto) and recalculate";
+      swissBtn.onclick = redoWithSwissEphemeris;
+      rightBox.appendChild(swissBtn);
+      if (withAudit) {
+        const auditBtn = document.createElement("button");
+        auditBtn.type = "button";
+        auditBtn.className = "btn btn-secondary btn-sm";
+        auditBtn.textContent = "🔍 Audit Math";
+        auditBtn.title = "Inspect internal planetary precision vs Swiss Ephemeris benchmarks";
+        auditBtn.onclick = openInternalLogicAuditModal;
+        rightBox.appendChild(auditBtn);
+      }
+      banner.appendChild(leftBox);
+      banner.appendChild(rightBox);
     }
 
     async function retrySwissEphemerisAndRecalculate() {
@@ -3021,12 +3122,8 @@
       SWISSEPH_CONFIG.status = "INIT";
       await initSwissEphemeris();
 
-      // Recalculate candidate Muhurtham slots
-      calculateMuhurthamFast();
-
-      if (currentStep === 4) {
-        renderScrutinyCards();
-      }
+      // Recalculate candidate Muhurtham slots, staying on the dossier if that is where the user was
+      recalculateKeepingStep();
 
       updateFallbackBanners();
 
@@ -3035,6 +3132,13 @@
     }
 
     function updateFallbackBanners() {
+      if (isInternalEngineChosen()) {
+        const ib3 = document.getElementById("step3FallbackBanner");
+        const ib4 = document.getElementById("step4FallbackBanner");
+        if (ib3) fillInternalChosenBanner(ib3, true);
+        if (ib4) fillInternalChosenBanner(ib4, false);
+        return;
+      }
       const isFallback = isFallbackActive();
 
       // Step 3 Banner
@@ -3072,6 +3176,7 @@
 
           textDiv.appendChild(titleDiv);
           textDiv.appendChild(subDiv);
+          appendLastCalcLine(textDiv);
           leftBox.appendChild(textDiv);
 
           const rightBox = document.createElement("div");
@@ -3120,6 +3225,7 @@
 
           textDiv.appendChild(titleDiv);
           textDiv.appendChild(subDiv);
+          appendLastCalcLine(textDiv);
           leftBox.appendChild(textDiv);
 
           // No Redo here: Swiss Ephemeris is active and the panel heading already has a Redo button
@@ -3162,6 +3268,7 @@
 
           textDiv.appendChild(titleDiv);
           textDiv.appendChild(subDiv);
+          appendLastCalcLine(textDiv);
           leftBox.appendChild(textDiv);
 
           const rightBox = document.createElement("div");
@@ -3197,6 +3304,7 @@
 
           textDiv.appendChild(titleDiv);
           textDiv.appendChild(subDiv);
+          appendLastCalcLine(textDiv);
           leftBox.appendChild(textDiv);
 
           // No Redo here: Swiss Ephemeris is active and the panel heading already has a Redo button
@@ -3218,10 +3326,11 @@
         SWISSEPH_CONFIG.mode = "AUTO";
       }
       updateEphemerisUI();
-      // If user is currently on step 3 or 4, re-calculate with chosen engine
+      // If user is currently on step 3 or 4, re-calculate with chosen engine (staying on the same step)
       if (currentStep >= 3) {
-        calculateMuhurthamFast();
+        recalculateKeepingStep();
       }
+      updateFallbackBanners();
     }
 
     function updateEphemerisUI(overrideState) {
@@ -3331,9 +3440,10 @@
       const asc = getAscendant(jd, lat, lon, ayanamsha);
 
       return {
-        engineName: "Internal Ephemeris (Deterministic Fallback)",
-        engineShort: "Internal Fallback",
+        engineName: isInternalEngineChosen() ? "Internal Ephemeris (Selected)" : "Internal Ephemeris (Deterministic Fallback)",
+        engineShort: isInternalEngineChosen() ? "Internal Ephemeris" : "Internal Fallback",
         isSwissEph: false,
+        isInternalChoice: isInternalEngineChosen(),
         jd: jd,
         ayanamsha: ayanamsha,
         planets: planets,
@@ -4013,7 +4123,7 @@
           if (ephem.isSwissEph) {
             consensusBadges.push("Swiss Ephemeris (AGPL)");
           } else {
-            consensusBadges.push("⚠️ Internal Fallback");
+            consensusBadges.push(ephem.isInternalChoice ? "Internal Ephemeris" : "⚠️ Internal Fallback");
           }
 
           const rawScore = score;
@@ -4057,6 +4167,7 @@
             ephemEngine: ephem.engineName,
             ephemEngineShort: ephem.engineShort,
             isSwissEph: ephem.isSwissEph,
+            isInternalChoice: Boolean(ephem.isInternalChoice),
             lagna: RASHI_NAMES[asc.rashiIdx],
             lagnaIdx: asc.rashiIdx,
             lagnaDegreeInSign: asc.degInRashi.toFixed(1),
@@ -4155,6 +4266,15 @@
 
       // Sort according to selected sort mode
       applySorting();
+
+      const anyInternal = generatedCandidates.some(c => !c.isSwissEph);
+      lastCalcInfo = {
+        time: new Date(),
+        engine: !anyInternal ? "Swiss Ephemeris" : (isInternalEngineChosen() ? "Internal Ephemeris" : "Internal Ephemeris (fallback)"),
+        count: generatedCandidates.length
+      };
+      if (generatedCandidates.length === 0) lastCalcInfo.engine = isInternalEngineChosen() ? "Internal Ephemeris"
+        : (SWISSEPH_CONFIG.status === "READY_SWISSEPH" ? "Swiss Ephemeris" : "Internal Ephemeris (fallback)");
 
       generatedCandidates.forEach(c => {
         if (previouslySelected.has(c.id) && selectedCandidates.size < 5) selectedCandidates.add(c.id);
@@ -5095,11 +5215,17 @@
             key: isMl ? "ഗണന എഞ്ചിൻ (Ephemeris)" : "Ephemeris Engine",
             val: cand.isSwissEph
               ? (isMl ? "സ്വിസ്സ് എഫെമെറിസ് (Swiss Ephemeris AGPL-3.0)" : "Swiss Ephemeris (GNU AGPL-3.0)")
-              : (isMl ? "⚠️ ആന്തരിക ഗണിത എഞ്ചിൻ (സ്വിസ്സ് എഫെമെറിസ് ലഭ്യമല്ലാത്തതിനാൽ ഫാൾബാക്ക്)" : "⚠️ Internal Ephemeris (Active Fallback - Swiss Ephemeris Offline)"),
+              : cand.isInternalChoice
+                ? (isMl ? "ആന്തരിക ഗണിത എഞ്ചിൻ (തിരഞ്ഞെടുത്തത്)" : "Internal Ephemeris (selected)")
+                : (isMl ? "⚠️ ആന്തരിക ഗണിത എഞ്ചിൻ (സ്വിസ്സ് എഫെമെറിസ് ലഭ്യമല്ലാത്തതിനാൽ ഫാൾബാക്ക്)" : "⚠️ Internal Ephemeris (Active Fallback - Swiss Ephemeris Offline)"),
             desc: cand.isSwissEph
               ? (isMl ? "Astrodienst AG-യുടെ അംഗീകൃത സ്വിസ്സ് എഫെമെറിസ് (GNU AGPL-3.0) വഴി കൃത്യമായി കണക്കാക്കിയത്." : "Calculated using Astrodienst AG Swiss Ephemeris under GNU AGPL-3.0.")
-              : (isMl ? "സ്വിസ്സ് എഫെമെറിസ് കണക്ഷൻ ലഭ്യമല്ലാത്തതിനാൽ ഹൈ-പ്രിസിഷൻ ആന്തരിക ഗണിത എഞ്ചിൻ ഫാൾബാക്കായി പ്രവർത്തിപ്പിച്ചു. ആവശ്യമെങ്കിൽ വീണ്ടും കണക്കുകൂട്ടുക." : "Swiss Ephemeris was unavailable or offline. Calculated using high-precision internal astronomical mathematical algorithms. You can redo calculations anytime."),
-            color: cand.isSwissEph ? "green" : "amber",
+              : cand.isInternalChoice
+                ? (isMl
+                  ? "സ്വിസ്സ് എഫെമെറിസുമായി താരതമ്യം ചെയ്ത് ഉറപ്പാക്കിയ ആന്തരിക എഞ്ചിൻ: ഗ്രഹസ്ഥാനങ്ങൾ 0.02°-നുള്ളിൽ (വ്യാഴം, ശനി 0.2°), ലഗ്നം 0.01°-നുള്ളിൽ, സൂര്യോദയം അര മിനിറ്റിനുള്ളിൽ. തിഥി, നക്ഷത്രം, യോഗം, ലഗ്നരാശി എന്നിവ എല്ലാ പരിശോധനകളിലും ഒത്തുവന്നു."
+                  : "Verified against Swiss Ephemeris: planets within 0.02° (Jupiter and Saturn within 0.2°), Lagna within 0.01°, sunrise within half a minute. Tithi, nakshatra, yoga and lagna sign matched in every benchmark case.")
+                : (isMl ? "സ്വിസ്സ് എഫെമെറിസ് കണക്ഷൻ ലഭ്യമല്ലാത്തതിനാൽ ഹൈ-പ്രിസിഷൻ ആന്തരിക ഗണിത എഞ്ചിൻ ഫാൾബാക്കായി പ്രവർത്തിപ്പിച്ചു. ആവശ്യമെങ്കിൽ വീണ്ടും കണക്കുകൂട്ടുക." : "Swiss Ephemeris was unavailable or offline. Calculated using high-precision internal astronomical mathematical algorithms. You can redo calculations anytime."),
+            color: (cand.isSwissEph || cand.isInternalChoice) ? "green" : "amber",
             isOmitted: false,
             omittedLabel: "",
             isEphemeris: true
@@ -5177,17 +5303,22 @@
           valDiv.appendChild(valSpan);
 
           if (r.isEphemeris && !cand.isSwissEph) {
-            valSpan.style.color = "var(--ba-warning, #f59e0b)";
+            if (!cand.isInternalChoice) valSpan.style.color = "var(--ba-warning, #f59e0b)";
             const inlineRedoBtn = document.createElement("button");
             inlineRedoBtn.type = "button";
             inlineRedoBtn.className = "btn btn-secondary btn-sm";
             inlineRedoBtn.style.padding = "0.15rem 0.5rem";
             inlineRedoBtn.style.fontSize = "0.75rem";
-            inlineRedoBtn.textContent = "🔄 Redo Calculations";
-            inlineRedoBtn.title = "Retry Swiss Ephemeris connection and redo calculations";
+            inlineRedoBtn.textContent = cand.isInternalChoice
+              ? (isMl ? "🪐 സ്വിസ്സ് എഫെമെറിസിൽ വീണ്ടും" : "🪐 Redo with Swiss Ephemeris")
+              : "🔄 Redo Calculations";
+            inlineRedoBtn.title = cand.isInternalChoice
+              ? "Switch the engine back to Swiss Ephemeris (Auto) and recalculate"
+              : "Retry Swiss Ephemeris connection and redo calculations";
             inlineRedoBtn.onclick = (e) => {
               e.stopPropagation();
-              retrySwissEphemerisAndRecalculate();
+              if (cand.isInternalChoice) redoWithSwissEphemeris();
+              else retrySwissEphemerisAndRecalculate();
             };
             valDiv.appendChild(inlineRedoBtn);
           }
