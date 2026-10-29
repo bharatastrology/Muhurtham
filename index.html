@@ -3044,7 +3044,9 @@
     }
 
     // Positive banner for a deliberately chosen internal engine, with a Swiss Ephemeris redo option
-    function fillInternalChosenBanner(banner, withAudit) {
+    // Blue banner whenever results come from the internal engine: chosen in the switcher, or used
+    // because Swiss Ephemeris could not load (isOutage). Both offer a way back to Swiss Ephemeris.
+    function fillInternalEngineBanner(banner, withAudit, isOutage) {
       banner.textContent = "";
       banner.style.display = "flex";
       banner.style.background = "rgba(14, 165, 233, 0.08)";
@@ -3063,7 +3065,9 @@
       const titleDiv = document.createElement("div");
       titleDiv.style.fontWeight = "700";
       titleDiv.style.color = "var(--ba-text-main)";
-      titleDiv.textContent = "Internal Ephemeris selected: fast, fully offline and verified";
+      titleDiv.textContent = isOutage
+        ? "Swiss Ephemeris couldn't load, so the verified internal engine was used"
+        : "Internal Ephemeris selected: fast, fully offline and verified";
       const subDiv = document.createElement("div");
       subDiv.style.fontSize = "0.8rem";
       subDiv.style.color = "var(--ba-text-muted)";
@@ -3081,9 +3085,11 @@
       const swissBtn = document.createElement("button");
       swissBtn.type = "button";
       swissBtn.className = "btn btn-secondary btn-sm";
-      swissBtn.textContent = "🪐 Redo with Swiss Ephemeris";
-      swissBtn.title = "Switch the engine back to Swiss Ephemeris (Auto) and recalculate";
-      swissBtn.onclick = redoWithSwissEphemeris;
+      swissBtn.textContent = isOutage ? "🪐 Retry Swiss Ephemeris" : "🪐 Redo with Swiss Ephemeris";
+      swissBtn.title = isOutage
+        ? "Try loading Swiss Ephemeris again and recalculate"
+        : "Switch the engine back to Swiss Ephemeris (Auto) and recalculate";
+      swissBtn.onclick = isOutage ? retrySwissEphemerisAndRecalculate : redoWithSwissEphemeris;
       rightBox.appendChild(swissBtn);
       if (withAudit) {
         const auditBtn = document.createElement("button");
@@ -3132,14 +3138,15 @@
     }
 
     function updateFallbackBanners() {
-      if (isInternalEngineChosen()) {
+      const chosen = isInternalEngineChosen();
+      const isFallback = isFallbackActive();
+      if (chosen || isFallback) {
         const ib3 = document.getElementById("step3FallbackBanner");
         const ib4 = document.getElementById("step4FallbackBanner");
-        if (ib3) fillInternalChosenBanner(ib3, true);
-        if (ib4) fillInternalChosenBanner(ib4, false);
+        if (ib3) fillInternalEngineBanner(ib3, true, !chosen);
+        if (ib4) fillInternalEngineBanner(ib4, false, !chosen);
         return;
       }
-      const isFallback = isFallbackActive();
 
       // Step 3 Banner
       const b3 = document.getElementById("step3FallbackBanner");
@@ -3364,7 +3371,7 @@
           btn.title = "Default: Swiss Ephemeris (AGPL) Active with Internal Fallback (Click to cycle)";
           btn.style.borderColor = "var(--ba-surface-border)";
         } else {
-          btn.textContent = "⚠️ Engine: Fallback Active (SwissEph Offline - Click to Redo)";
+          btn.textContent = "🧮 Engine: Internal (SwissEph offline, click to retry)";
           btn.title = "Swiss Ephemeris is unavailable. Currently using deterministic Internal Fallback. Click to retry and redo calculations.";
           btn.style.borderColor = "var(--ba-warning, #f59e0b)";
         }
@@ -4123,7 +4130,7 @@
           if (ephem.isSwissEph) {
             consensusBadges.push("Swiss Ephemeris (AGPL)");
           } else {
-            consensusBadges.push(ephem.isInternalChoice ? "Internal Ephemeris" : "⚠️ Internal Fallback");
+            consensusBadges.push("Internal Ephemeris"); // amber in Step 3 when Swiss Ephemeris was offline
           }
 
           const rawScore = score;
@@ -4567,12 +4574,12 @@
 
             cand.badges.forEach(bText => {
               const bTag = document.createElement("span");
-              if (bText.includes("Fallback")) {
+              if (bText === "Internal Ephemeris" && !cand.isInternalChoice) {
                 bTag.className = "tag";
                 bTag.style.border = "1px solid var(--ba-warning, #f59e0b)";
                 bTag.style.color = "var(--ba-warning, #f59e0b)";
                 bTag.style.fontWeight = "700";
-                bTag.title = "Swiss Ephemeris unavailable; calculated using Internal Ephemeris Fallback";
+                bTag.title = "Swiss Ephemeris could not load; calculated with the verified internal engine";
               } else {
                 bTag.className = "tag tag-accent";
               }
@@ -4671,12 +4678,12 @@
 
         cand.badges.forEach(bText => {
           const bTag = document.createElement("span");
-          if (bText.includes("Fallback")) {
+          if (bText === "Internal Ephemeris" && !cand.isInternalChoice) {
             bTag.className = "tag";
             bTag.style.border = "1px solid var(--ba-warning, #f59e0b)";
             bTag.style.color = "var(--ba-warning, #f59e0b)";
             bTag.style.fontWeight = "700";
-            bTag.title = "Swiss Ephemeris unavailable; calculated using Internal Ephemeris Fallback";
+            bTag.title = "Swiss Ephemeris could not load; calculated with the verified internal engine";
           } else {
             bTag.className = "tag tag-accent";
           }
@@ -5217,14 +5224,16 @@
               ? (isMl ? "സ്വിസ്സ് എഫെമെറിസ് (Swiss Ephemeris AGPL-3.0)" : "Swiss Ephemeris (GNU AGPL-3.0)")
               : cand.isInternalChoice
                 ? (isMl ? "ആന്തരിക ഗണിത എഞ്ചിൻ (തിരഞ്ഞെടുത്തത്)" : "Internal Ephemeris (selected)")
-                : (isMl ? "⚠️ ആന്തരിക ഗണിത എഞ്ചിൻ (സ്വിസ്സ് എഫെമെറിസ് ലഭ്യമല്ലാത്തതിനാൽ ഫാൾബാക്ക്)" : "⚠️ Internal Ephemeris (Active Fallback - Swiss Ephemeris Offline)"),
+                : (isMl ? "ആന്തരിക ഗണിത എഞ്ചിൻ (സ്വിസ്സ് എഫെമെറിസ് ലഭ്യമല്ല)" : "Internal Ephemeris (Swiss Ephemeris offline)"),
             desc: cand.isSwissEph
               ? (isMl ? "Astrodienst AG-യുടെ അംഗീകൃത സ്വിസ്സ് എഫെമെറിസ് (GNU AGPL-3.0) വഴി കൃത്യമായി കണക്കാക്കിയത്." : "Calculated using Astrodienst AG Swiss Ephemeris under GNU AGPL-3.0.")
               : cand.isInternalChoice
                 ? (isMl
                   ? "സ്വിസ്സ് എഫെമെറിസുമായി താരതമ്യം ചെയ്ത് ഉറപ്പാക്കിയ ആന്തരിക എഞ്ചിൻ: ഗ്രഹസ്ഥാനങ്ങൾ 0.02°-നുള്ളിൽ (വ്യാഴം, ശനി 0.2°), ലഗ്നം 0.01°-നുള്ളിൽ, സൂര്യോദയം അര മിനിറ്റിനുള്ളിൽ. തിഥി, നക്ഷത്രം, യോഗം, ലഗ്നരാശി എന്നിവ എല്ലാ പരിശോധനകളിലും ഒത്തുവന്നു."
                   : "Verified against Swiss Ephemeris: planets within 0.02° (Jupiter and Saturn within 0.2°), Lagna within 0.01°, sunrise within half a minute. Tithi, nakshatra, yoga and lagna sign matched in every benchmark case.")
-                : (isMl ? "സ്വിസ്സ് എഫെമെറിസ് കണക്ഷൻ ലഭ്യമല്ലാത്തതിനാൽ ഹൈ-പ്രിസിഷൻ ആന്തരിക ഗണിത എഞ്ചിൻ ഫാൾബാക്കായി പ്രവർത്തിപ്പിച്ചു. ആവശ്യമെങ്കിൽ വീണ്ടും കണക്കുകൂട്ടുക." : "Swiss Ephemeris was unavailable or offline. Calculated using high-precision internal astronomical mathematical algorithms. You can redo calculations anytime."),
+                : (isMl
+                  ? "സ്വിസ്സ് എഫെമെറിസ് ലഭ്യമല്ലാത്തതിനാൽ, അതുമായി താരതമ്യം ചെയ്ത് ഉറപ്പാക്കിയ ആന്തരിക എഞ്ചിൻ ഉപയോഗിച്ചു: ഗ്രഹസ്ഥാനങ്ങൾ 0.02°-നുള്ളിൽ (വ്യാഴം, ശനി 0.2°), ലഗ്നം 0.01°-നുള്ളിൽ. സ്വിസ്സ് എഫെമെറിസിൽ വീണ്ടും ശ്രമിക്കാം."
+                  : "Swiss Ephemeris could not load, so the verified internal engine was used: planets within 0.02° (Jupiter and Saturn within 0.2°), Lagna within 0.01°. You can retry with Swiss Ephemeris."),
             color: (cand.isSwissEph || cand.isInternalChoice) ? "green" : "amber",
             isOmitted: false,
             omittedLabel: "",
@@ -5311,7 +5320,7 @@
             inlineRedoBtn.style.fontSize = "0.75rem";
             inlineRedoBtn.textContent = cand.isInternalChoice
               ? (isMl ? "🪐 സ്വിസ്സ് എഫെമെറിസിൽ വീണ്ടും" : "🪐 Redo with Swiss Ephemeris")
-              : "🔄 Redo Calculations";
+              : (isMl ? "🪐 സ്വിസ്സ് എഫെമെറിസ് വീണ്ടും ശ്രമിക്കുക" : "🪐 Retry Swiss Ephemeris");
             inlineRedoBtn.title = cand.isInternalChoice
               ? "Switch the engine back to Swiss Ephemeris (Auto) and recalculate"
               : "Retry Swiss Ephemeris connection and redo calculations";
