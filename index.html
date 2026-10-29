@@ -4,6 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net/npm/swisseph-wasm@0.1.0/; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://cdn.jsdelivr.net/npm/swisseph-wasm@0.1.0/; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <meta name="color-scheme" content="light dark">
+  <script id="themeBoot">
+    // Apply the theme before first paint: saved choice (Auto / Light / Dark), Auto follows the OS/browser
+    (function () {
+      var pref = "auto";
+      try { pref = localStorage.getItem("ba_theme_pref") || "auto"; } catch (e) { /* storage blocked */ }
+      var sysDark = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)").matches : true;
+      var dark = pref === "dark" || (pref === "auto" && sysDark);
+      document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+    })();
+  </script>
   <title>BharatAstrology.org - Business Muhurtham Calculation Engine</title>
   <meta name="description" content="Commercial Muhurtham & Electional Astrology calculation engine powered by Kerala Panchangam, KP System, Western Electional and BaZi metaphysics.">
   <style>
@@ -932,6 +943,22 @@
     }
     .candidate-card.rejected, .day-slot-row.rejected { opacity: 0.6; }
     .calendar-slot-pill.rejected { opacity: 0.55; text-decoration: line-through; }
+    .tag-kalam {
+      margin-left: 0.5rem;
+      border: 1px solid var(--ba-warning, #f59e0b) !important;
+      color: var(--ba-warning, #b45309) !important;
+      font-weight: 700;
+      font-size: 0.7rem;
+      vertical-align: middle;
+      white-space: normal;
+    }
+    .calendar-slot-pill.kalam-overlap { border-style: dashed; border-color: var(--ba-warning, #f59e0b); }
+    .slot-clean-note {
+      margin-top: 0.35rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--ba-warning, #b45309);
+    }
     .tag-rejected {
       margin-left: 0.5rem;
       border: 1px solid var(--ba-danger) !important;
@@ -1277,7 +1304,7 @@
       <div class="header-actions">
         <button class="btn btn-secondary btn-sm" id="btnEphemerisSwitcher" onclick="toggleEphemerisEngine()" title="Ephemeris Engine Mode (Swiss Ephemeris AGPL default / Internal Fallback)">🪐 Engine: Auto (SwissEph / Fallback)</button>
         <button class="btn btn-secondary btn-sm" id="btnInternalAudit" onclick="openInternalLogicAuditModal()" title="Inspect Complete Internal Ephemeris & Astrology Logic Audit">🔍 Internal Logic Audit</button>
-        <button class="btn btn-secondary btn-sm" id="themeToggleBtn" onclick="toggleTheme()">☀️ Light / 🌙 Dark</button>
+        <button class="btn btn-secondary btn-sm" id="themeToggleBtn" onclick="toggleTheme()">🌗 Theme: Auto</button>
         <button class="btn btn-secondary btn-sm" onclick="showContactModal()">📍 Contact Institute</button>
         <a href="https://github.com/bharatastrology/Muhurtham" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" title="View Source Repository on GitHub"><svg style="width:14px;height:14px;fill:currentColor;vertical-align:middle;margin-right:4px;" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>Source Code</a>
       </div>
@@ -1851,6 +1878,7 @@
       updateRestoreButtonVisibility();
       initRuleCheckboxListeners();
       triggerLangPulseOnce(); // Pulse once on first load without glowing
+      applyTheme(getThemePref()); // sync theme button label with the boot-time theme
       initSwissEphemeris(); // Initialize Swiss Ephemeris AGPL default with internal fallback
       syncStep2WithActiveSystems(); // Synchronize Step 2 rules with Step 1 active systems
       updateViewToggleBtn();
@@ -1941,11 +1969,51 @@
       }
     }
 
-    // Theme Switcher
+    // Theme Switcher: Auto (follows OS/browser) -> Light -> Dark, choice remembered in this browser
+    const THEME_PREF_KEY = "ba_theme_pref";
+    const THEME_ORDER = ["auto", "light", "dark"];
+    const THEME_LABELS = { auto: "🌗 Theme: Auto", light: "☀️ Theme: Light", dark: "🌙 Theme: Dark" };
+
+    function getThemePref() {
+      try {
+        const v = localStorage.getItem(THEME_PREF_KEY);
+        return THEME_ORDER.includes(v) ? v : "auto";
+      } catch (e) {
+        return "auto";
+      }
+    }
+
+    function applyTheme(pref) {
+      const sysDark = typeof window.matchMedia === "function"
+        ? window.matchMedia("(prefers-color-scheme: dark)").matches : true;
+      const dark = pref === "dark" || (pref === "auto" && sysDark);
+      document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+      const btn = document.getElementById("themeToggleBtn");
+      if (btn) {
+        btn.textContent = THEME_LABELS[pref];
+        btn.title = pref === "auto"
+          ? `Following your system setting (currently ${dark ? "dark" : "light"}). Click for Light.`
+          : `Theme fixed to ${pref}. Click for ${pref === "light" ? "Dark" : "Auto (system)"}.`;
+      }
+    }
+
     function toggleTheme() {
-      const current = document.documentElement.getAttribute("data-theme");
-      const target = current === "light" ? "dark" : "light";
-      document.documentElement.setAttribute("data-theme", target);
+      const next = THEME_ORDER[(THEME_ORDER.indexOf(getThemePref()) + 1) % THEME_ORDER.length];
+      try { localStorage.setItem(THEME_PREF_KEY, next); } catch (e) { /* storage blocked: applies for this page only */ }
+      applyTheme(next);
+    }
+
+    // Live-follow OS/browser theme changes while in Auto
+    if (typeof window.matchMedia === "function") {
+      const themeQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      const onSystemThemeChange = () => { if (getThemePref() === "auto") applyTheme("auto"); };
+      if (typeof themeQuery.addEventListener === "function") themeQuery.addEventListener("change", onSystemThemeChange);
+      else if (typeof themeQuery.addListener === "function") themeQuery.addListener(onSystemThemeChange);
+      // Safety net for embeds/webviews that don't dispatch the change event: re-check on return to the tab
+      if (typeof window.addEventListener === "function") window.addEventListener("focus", onSystemThemeChange);
+      if (typeof document.addEventListener === "function") {
+        document.addEventListener("visibilitychange", () => { if (!document.hidden) onSystemThemeChange(); });
+      }
     }
 
     // Wizard Navigation
@@ -2696,6 +2764,42 @@
                total: Object.values(parts).reduce((a, b) => a + b, 0) };
     }
 
+    // Minutes after local midnight -> "HH:MM"
+    function formatMinutesHHMM(mins) {
+      const m = Math.round(mins);
+      return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+    }
+
+    // Split a slot [startMin, endMin] around inauspicious intervals (Rahu Kalam, Gulika, Yamagandam).
+    // Returns which periods overlap (and where) and the clean sub-windows that remain.
+    function getSlotCleanTiming(startMin, endMin, bads) {
+      const overlaps = [];
+      bads.forEach(b => {
+        const from = Math.max(startMin, b.start);
+        const to = Math.min(endMin, b.end);
+        if (from < to) overlaps.push({ key: b.key, name: b.name, nameMl: b.nameMl, from: formatMinutesHHMM(from), to: formatMinutesHHMM(to), fromMin: from, toMin: to });
+      });
+      let clean = [[startMin, endMin]];
+      bads.forEach(b => {
+        clean = clean.flatMap(([s, e]) => {
+          if (b.end <= s || b.start >= e) return [[s, e]];
+          const parts = [];
+          if (b.start > s) parts.push([s, b.start]);
+          if (b.end < e) parts.push([b.end, e]);
+          return parts;
+        });
+      });
+      clean = clean.filter(([s, e]) => e - s >= 1);
+      const list = clean.map(([s, e]) => `${formatMinutesHHMM(s)} - ${formatMinutesHHMM(e)}`).join(", ");
+      const fullyClean = overlaps.length === 0;
+      return {
+        overlaps,
+        clean: clean.map(([s, e]) => ({ startMin: s, endMin: e, text: `${formatMinutesHHMM(s)} - ${formatMinutesHHMM(e)}` })),
+        cleanText: fullyClean ? "Whole slot is clean" : (clean.length ? `Clean time in this slot: ${list}` : "No clean time in this slot"),
+        cleanTextMl: fullyClean ? "മുഴുവൻ സമയവും ദോഷരഹിതം" : (clean.length ? `ഈ സമയത്തിനുള്ളിലെ ദോഷരഹിത സമയം: ${list}` : "ഈ സമയത്തിൽ ദോഷരഹിത സമയമില്ല")
+      };
+    }
+
     // Raw points -> displayed 0-100 score on a fixed scale (raw 0 = 50, +60 = 99, -60 = 1)
     function toDisplayScore(raw) {
       return Math.max(1, Math.min(99, Math.round(50 + raw * 5 / 6)));
@@ -3294,6 +3398,23 @@
     // Candidates rejected while finalising in Step 4; remembered in the Step 3 shortlist until re-selected
     const rejectedCandidates = new Set();
 
+    // Warning tag for slots kept despite overlapping Rahu Kalam / Gulika / Yamagandam (rules omitted in Step 2)
+    function createKalamOverlapTag(cand) {
+      if (!cand.kalamOverlaps || cand.kalamOverlaps.length === 0) return null;
+      const tag = document.createElement("span");
+      tag.className = "tag tag-kalam";
+      const what = cand.kalamOverlaps.map(o => `${o.name} ${o.from}-${o.to}`).join(", ");
+      tag.textContent = `⚠ Overlaps ${what} · ${cand.cleanSegments.length ? "Clean: " + cand.cleanSegments.map(s => s.text).join(", ") : "no clean time"}`;
+      tag.title = "This slot overlaps an inauspicious period because that rule is omitted in Step 2. Use the clean time shown.";
+      return tag;
+    }
+
+    // Longest clean sub-window of a slot (minutes), or null when the whole slot is afflicted
+    function getBestCleanSegment(cand) {
+      if (!cand.cleanSegments || cand.cleanSegments.length === 0) return null;
+      return cand.cleanSegments.reduce((a, b) => (b.endMin - b.startMin > a.endMin - a.startMin ? b : a));
+    }
+
     function createRejectedTag() {
       const tag = document.createElement("span");
       tag.className = "tag tag-rejected";
@@ -3449,11 +3570,17 @@
           const taraEval = evaluateTara(taraIdx, taraCycle, nakshatraPada);
 
           // Real Rahu Kalam, Gulika Kalam & Yamagandam Overlap Checks
-          const winStartDecimal = win.hourStart + win.minStart / 60;
-          const winEndDecimal = win.hourEnd + win.minEnd / 60;
-          const hasRahuOverlap = (winStartDecimal < rahuEndHour && winEndDecimal > rahuStartHour);
-          const hasGulikaOverlap = (winStartDecimal < gulikaEndHour && winEndDecimal > gulikaStartHour);
-          const hasYamaOverlap = (winStartDecimal < yamaEndHour && winEndDecimal > yamaStartHour);
+          // Windows in whole minutes, rounded outward so the "clean" part of a slot never
+          // includes an inauspicious minute; overlaps and clean time come from the same numbers
+          const kalams = [
+            { key: "rahu", name: "Rahu Kalam", nameMl: "രാഹുകാലം", start: Math.floor(rahuStartHour * 60), end: Math.ceil(rahuEndHour * 60) },
+            { key: "gulika", name: "Gulika Kalam", nameMl: "ഗുളികകാലം", start: Math.floor(gulikaStartHour * 60), end: Math.ceil(gulikaEndHour * 60) },
+            { key: "yama", name: "Yamagandam", nameMl: "യമഗണ്ഡം", start: Math.floor(yamaStartHour * 60), end: Math.ceil(yamaEndHour * 60) }
+          ];
+          const slotTiming = getSlotCleanTiming(win.hourStart * 60 + win.minStart, win.hourEnd * 60 + win.minEnd, kalams);
+          const hasRahuOverlap = slotTiming.overlaps.some(o => o.key === "rahu");
+          const hasGulikaOverlap = slotTiming.overlaps.some(o => o.key === "gulika");
+          const hasYamaOverlap = slotTiming.overlaps.some(o => o.key === "yama");
 
           // Masa Sankramana: within 16 ghatikas (6 h 24 min) of the Sun's sidereal sign ingress
           const degInSunSign = sunLong % 30;
@@ -3627,15 +3754,23 @@
           const dateStr = curDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
           const timeWindow = `${pad(win.hourStart)}:${pad(win.minStart)} - ${pad(win.hourEnd)}:${pad(win.minEnd)}`;
 
-          // Format Rahu, Gulika and Yamagandam Window display strings
-          const formatHourMin = (dec) => {
-            const h = Math.floor(dec);
-            const mn = Math.round((dec - h) * 60);
-            return `${pad(h)}:${pad(mn)}`;
+          const kalamStr = (k) => `${formatMinutesHHMM(k.start)} - ${formatMinutesHHMM(k.end)}`;
+          const rahuWindowStr = kalamStr(kalams[0]);
+          const gulikaWindowStr = kalamStr(kalams[1]);
+          const yamaWindowStr = kalamStr(kalams[2]);
+          const overlapOf = (key) => slotTiming.overlaps.find(o => o.key === key);
+          const kalamDesc = (key, label, windowStr) => {
+            const o = overlapOf(key);
+            return o
+              ? `Day's ${label}: ${windowStr}. Overlaps this slot ${o.from} - ${o.to}. ${slotTiming.cleanText}.`
+              : `Day's ${label}: ${windowStr}. This slot is clear of it.`;
           };
-          const rahuWindowStr = `${formatHourMin(rahuStartHour)} - ${formatHourMin(rahuEndHour)}`;
-          const gulikaWindowStr = `${formatHourMin(gulikaStartHour)} - ${formatHourMin(gulikaEndHour)}`;
-          const yamaWindowStr = `${formatHourMin(yamaStartHour)} - ${formatHourMin(yamaEndHour)}`;
+          const kalamDescMl = (key, labelMl, windowStr) => {
+            const o = overlapOf(key);
+            return o
+              ? `ഈ ദിവസത്തെ ${labelMl}: ${windowStr}. ഈ സമയവുമായി ${o.from} - ${o.to} വരെ സമ്പർക്കം. ${slotTiming.cleanTextMl}.`
+              : `ഈ ദിവസത്തെ ${labelMl}: ${windowStr}. ഈ സമയം ദോഷരഹിതമാകുന്നു.`;
+          };
 
           const targetTime = `${pad(win.evalHour)}:${pad(win.evalMin)}`;
 
@@ -3685,16 +3820,20 @@
               : (!hasMaleficIn8th ? `എട്ടാം ഭാവത്തിൽ ശുഭഗ്രഹ സാന്നിധ്യം. പാപബാധയില്ല.` : `എട്ടാം ഭാവത്തിൽ പാപഗ്രഹ സാന്നിധ്യമുണ്ട്.`),
             gulikaStatus: hasGulikaOverlap ? "Gulika Overlap (Careful)" : "Completely Free & Non-Overlapping",
             gulikaStatusMl: hasGulikaOverlap ? "ഗുളികകാല സമ്പർക്കം" : "ദോഷരഹിതം (ഒഴിവാക്കപ്പെട്ടു)",
-            gulikaDesc: `Day's Gulika Kalam: ${gulikaWindowStr}. Evaluated slot is safely clear.`,
-            gulikaDescMl: `ഈ ദിവസത്തെ ഗുളികകാലം: ${gulikaWindowStr}. ഈ സമയം ദോഷരഹിതമാകുന്നു.`,
+            gulikaDesc: kalamDesc("gulika", "Gulika Kalam", gulikaWindowStr),
+            gulikaDescMl: kalamDescMl("gulika", "ഗുളികകാലം", gulikaWindowStr),
             rahuStatus: hasRahuOverlap ? "Rahu Kalam Overlap" : "Completely Free & Unafflicted",
             rahuStatusMl: hasRahuOverlap ? "രാഹുകാല സമ്പർക്കം" : "ദോഷരഹിതം",
-            rahuDesc: `Day's Rahu Kalam: ${rahuWindowStr}. Zero overlap with the solar window.`,
-            rahuDescMl: `ഈ ദിവസത്തെ രാഹുകാലം: ${rahuWindowStr}. രാഹുകാല ബാധയില്ല.`,
+            rahuDesc: kalamDesc("rahu", "Rahu Kalam", rahuWindowStr),
+            rahuDescMl: kalamDescMl("rahu", "രാഹുകാലം", rahuWindowStr),
             yamaStatus: hasYamaOverlap ? "Yamagandam Overlap" : "Completely Free & Unafflicted",
             yamaStatusMl: hasYamaOverlap ? "യമഗണ്ഡ സമ്പർക്കം" : "ദോഷരഹിതം",
-            yamaDesc: `Day's Yamagandam: ${yamaWindowStr}. Evaluated slot is safely clear.`,
-            yamaDescMl: `ഈ ദിവസത്തെ യമഗണ്ഡം: ${yamaWindowStr}. ഈ സമയം ദോഷരഹിതമാകുന്നു.`,
+            yamaDesc: kalamDesc("yama", "Yamagandam", yamaWindowStr),
+            yamaDescMl: kalamDescMl("yama", "യമഗണ്ഡം", yamaWindowStr),
+            kalamOverlaps: slotTiming.overlaps,
+            cleanSegments: slotTiming.clean,
+            cleanText: slotTiming.cleanText,
+            cleanTextMl: slotTiming.cleanTextMl,
             sankramanaStatus: isMasaSankramana ? "Masa Sankramana Transition" : "Pure Solar Stability",
             sankramanaStatusMl: isMasaSankramana ? "മാസസംക്രമണ സന്ധി" : "ശുദ്ധ സൗരസ്ഥിതി",
             kpSubLordInfo: `${kpResult.subLord} (Star: ${kpResult.starLord}) ruling Houses ${kpResult.signifiedHouses}`,
@@ -4026,6 +4165,8 @@
             title.className = "candidate-window";
             title.textContent = cand.targetTime ? `⏰ ${cand.timeWindow} (Target: ${cand.targetTime})` : `⏰ ${cand.timeWindow} (Local Time)`;
             if (rejectedCandidates.has(cand.id)) title.appendChild(createRejectedTag());
+            const kalamTagG = createKalamOverlapTag(cand);
+            if (kalamTagG) title.appendChild(kalamTagG);
 
             const meta = document.createElement("div");
             meta.className = "candidate-meta";
@@ -4117,6 +4258,8 @@
         title.className = "candidate-window";
         title.textContent = cand.targetTime ? `${cand.dateDisplay} • ${cand.timeWindow} (Target: ${cand.targetTime})` : `${cand.dateDisplay} • ${cand.timeWindow}`;
         if (rejectedCandidates.has(cand.id)) title.appendChild(createRejectedTag());
+        const kalamTagL = createKalamOverlapTag(cand);
+        if (kalamTagL) title.appendChild(kalamTagL);
 
         const meta = document.createElement("div");
         meta.className = "candidate-meta";
@@ -4310,7 +4453,9 @@
               const isRejected = rejectedCandidates.has(slot.id);
               pill.className = "calendar-slot-pill" + (isSelected ? " selected" : "") + (isRejected ? " rejected" : "");
               pill.title = `${slot.dateDisplay} • ${slot.timeWindow}\nLagna: ${slot.lagna} | Moon: ${slot.nakshatra} (${slot.tara} Tara)\nScore: ${slot.score}% — Click to select/remove` +
-                (isRejected ? "\n✕ Rejected in Step 4 (select again to restore)" : "");
+                (isRejected ? "\n✕ Rejected in Step 4 (select again to restore)" : "") +
+                (slot.kalamOverlaps && slot.kalamOverlaps.length ? `\n⚠ Overlaps ${slot.kalamOverlaps.map(o => o.name).join(", ")} · ${slot.cleanText}` : "");
+              if (slot.kalamOverlaps && slot.kalamOverlaps.length) pill.classList.add("kalam-overlap");
 
               const checkSpan = document.createElement("span");
               checkSpan.textContent = isSelected ? "✓" : (isRejected ? "✕" : "○");
@@ -4451,6 +4596,13 @@
 
         titleBox.appendChild(title);
         titleBox.appendChild(sub);
+        if (cand.kalamOverlaps && cand.kalamOverlaps.length) {
+          const cleanNote = document.createElement("div");
+          cleanNote.className = "slot-clean-note";
+          const what = cand.kalamOverlaps.map(o => `${isMl ? o.nameMl : o.name} ${o.from} - ${o.to}`).join(", ");
+          cleanNote.textContent = `⚠ ${isMl ? "സമ്പർക്കം" : "Overlaps"} ${what} · ${isMl ? cand.cleanTextMl : cand.cleanText}`;
+          titleBox.appendChild(cleanNote);
+        }
 
         const scoreBadge = document.createElement("div");
         scoreBadge.className = "candidate-score-badge high";
@@ -4792,7 +4944,10 @@
         actionTitle.textContent = isMl ? "ശുപാർശ ചെയ്യുന്ന ഉദ്ഘാടന പൂജാ ക്രമങ്ങൾ:" : "Recommended Launch Ceremonial Sequence:";
 
         const ul = document.createElement("ul");
-        const timeParts = cand.timeWindow.split(" - ");
+        // Schedule the ceremony inside the clean part of the slot when it overlaps an inauspicious period
+        const bestClean = getBestCleanSegment(cand);
+        const ceremonyWindow = (cand.kalamOverlaps && cand.kalamOverlaps.length && bestClean) ? bestClean.text : cand.timeWindow;
+        const timeParts = ceremonyWindow.split(" - ");
         const startStr = timeParts[0] || "09:30";
         const endStr = timeParts[1] || "10:45";
 
@@ -4811,7 +4966,8 @@
 
         const startMin = parseMinutes(startStr);
         const endMin = parseMinutes(endStr);
-        const duration = Math.max(30, endMin - startMin);
+        // Fit all three steps inside the window (a 30-min floor pushed short slots past their end)
+        const duration = Math.max(1, endMin - startMin);
 
         const pujaTime = formatMinutes(startMin);
         const ribbonTime = formatMinutes(startMin + Math.floor(duration * 0.4));
@@ -4839,7 +4995,15 @@
           ul.appendChild(l3);
         }
         actionBox.appendChild(actionTitle);
-        actionBox.appendChild(ul);
+        if (cand.kalamOverlaps && cand.kalamOverlaps.length) {
+          const planNote = document.createElement("div");
+          planNote.className = "slot-clean-note";
+          planNote.textContent = bestClean
+            ? (isMl ? `ദോഷരഹിത സമയമായ ${bestClean.text} ഉള്ളിൽ ക്രമീകരിച്ചിരിക്കുന്നു.` : `Scheduled inside the clean time ${bestClean.text}.`)
+            : (isMl ? "ഈ സമയം മുഴുവൻ ദോഷകാലത്തിലാണ്; മറ്റൊരു മുഹൂർത്തം തിരഞ്ഞെടുക്കുക." : "The whole slot falls in an inauspicious period; choose another muhurtham.");
+          actionBox.appendChild(planNote);
+        }
+        if (!(cand.kalamOverlaps && cand.kalamOverlaps.length && !bestClean)) actionBox.appendChild(ul);
 
         card.appendChild(header);
         card.appendChild(kundaliWrapper);
@@ -5137,7 +5301,10 @@
         const lagna = isMl ? RASHI_NAMES_ML[c.lagnaIdx] : c.lagna;
         const nak = isMl ? NAKSHATRA_NAMES_ML[c.nakshatraIdx] : c.nakshatra;
         const tara = isMl ? TARA_NAMES_ML[c.taraIdx - 1] : c.tara;
-        [`#${i + 1}`, c.dateDisplay, c.timeWindow, lagna, `${nak} (${L("pada", "പാദം")} ${c.nakshatraPada})`, tara]
+        const windowCell = c.kalamOverlaps && c.kalamOverlaps.length
+          ? `${c.timeWindow} (${c.cleanSegments.length ? L("clean ", "ശുദ്ധം ") + c.cleanSegments.map(s => s.text).join(", ") : L("no clean time", "ശുദ്ധസമയമില്ല")})`
+          : c.timeWindow;
+        [`#${i + 1}`, c.dateDisplay, windowCell, lagna, `${nak} (${L("pada", "പാദം")} ${c.nakshatraPada})`, tara]
           .forEach(v => tr.appendChild(el("td", "", v)));
         tr.appendChild(el("td", "pr-score", `${c.score} · ${c.grade || getScoreGrade(c.score)}`));
         summary.appendChild(tr);
