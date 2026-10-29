@@ -42,6 +42,7 @@
 
     /* Light Theme Toggle */
     [data-theme="light"] {
+      --ba-primary: #b45309;        /* amber darkened for AA text contrast on white (#d97706 was ~3.2:1) */
       --ba-bg: #f8fafc;
       --ba-surface: #ffffff;
       --ba-surface-border: #cbd5e1;
@@ -139,7 +140,8 @@
     }
 
     .btn-primary {
-      background: var(--ba-gold-gradient);
+      /* Darker amber than the brand gold so white text passes AA (gold start was ~1.7:1) */
+      background: linear-gradient(135deg, #b45309 0%, #92400e 100%);
       color: #ffffff;
       box-shadow: 0 4px 12px var(--ba-primary-glow);
     }
@@ -300,7 +302,7 @@
     /* Form Layouts */
     .form-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
       gap: 1.25rem;
       margin-bottom: 1.5rem;
     }
@@ -395,10 +397,14 @@
     .rule-content {
       padding: 1.25rem;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
       gap: 1rem;
       border-top: 1px solid var(--ba-surface-border);
     }
+    /* Select-style settings (Sunrise Convention) take a full row: text above, control below */
+    .rule-select-item { grid-column: 1 / -1; flex-direction: column; gap: 0.5rem; }
+    .rule-select-item select { max-width: 22rem; }
+    .dock-count-short { display: none; }
 
     .rule-toggle-item {
       display: flex;
@@ -901,7 +907,7 @@
     /* Top 5 Deep Dive Scrutiny Grid */
     .scrutiny-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
       gap: 1.5rem;
     }
 
@@ -943,6 +949,63 @@
     }
     .candidate-card.rejected, .day-slot-row.rejected { opacity: 0.6; }
     .calendar-slot-pill.rejected { opacity: 0.55; text-decoration: line-through; }
+    /* Light theme: darker planet colours in the chart (yellow/sky/grey were faint on white) */
+    [data-theme="light"] .kundali-wrapper svg text[fill="#fbbf24"],
+    [data-theme="light"] .kundali-wrapper svg text[fill="#eab308"] { fill: #a16207; }
+    [data-theme="light"] .kundali-wrapper svg text[fill="#38bdf8"] { fill: #0369a1; }
+    [data-theme="light"] .kundali-wrapper svg text[fill="#94a3b8"] { fill: #475569; }
+    [data-theme="light"] .kundali-wrapper svg text[fill="#10b981"] { fill: #047857; }
+    [data-theme="light"] .kundali-wrapper svg text[fill="#f97316"] { fill: #c2410c; }
+    [data-theme="light"] .kundali-wrapper svg text[fill="#ec4899"] { fill: #be185d; }
+
+    /* Step headings receive focus on step change (programmatic, not a tab stop) */
+    .panel-title:focus { outline: none; }
+
+    /* Keyboard focus for custom controls (step tabs, calendar slots) */
+    .step-item:focus-visible, .calendar-slot-pill:focus-visible {
+      outline: 2px solid var(--ba-primary);
+      outline-offset: -2px;
+    }
+    /* Footer links: at least 24px tall targets */
+    .footer-links a { display: inline-block; min-height: 24px; padding: 0.2rem 0; line-height: 1.4; }
+
+    /* Status toast */
+    .app-toast {
+      position: fixed; left: 50%; bottom: 1.25rem; transform: translate(-50%, 1rem);
+      background: var(--ba-secondary); color: #f8fafc; padding: 0.6rem 1rem; border-radius: 8px;
+      font-size: 0.85rem; box-shadow: 0 8px 20px rgba(0,0,0,0.35); z-index: 1100; max-width: calc(100% - 2rem);
+      opacity: 0; pointer-events: none; transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .app-toast.show { opacity: 1; transform: translate(-50%, 0); }
+    @media print { .app-toast { display: none !important; } }
+
+    /* Inline form validation */
+    .form-control[aria-invalid="true"] { border-color: var(--ba-danger); box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.15); }
+    .field-error { color: var(--ba-danger); font-size: 0.8rem; font-weight: 600; margin-top: 0.3rem; }
+    [data-theme="dark"] .field-error { color: #f87171; }
+
+    /* "Shortlisted slot unticked" note: red pulse once, hold for 3 s, then fade to the banner text colour */
+    .dropped-note { border-radius: 4px; padding: 0 0.2rem; }
+    .dropped-note-pulse {
+      display: inline-block;
+      font-weight: 700;
+      animation: droppedNotePulse 4.5s ease-out 1 forwards;
+    }
+    @keyframes droppedNotePulse {
+      0% { color: #dc2626; background-color: rgba(220, 38, 38, 0.25); transform: scale(1); }
+      7% { color: #dc2626; background-color: rgba(220, 38, 38, 0.3); transform: scale(1.05); }
+      20% { color: #dc2626; background-color: rgba(220, 38, 38, 0); transform: scale(1); }
+      66.7% { color: #dc2626; font-weight: 700; }
+      100% { color: var(--ba-text-muted); background-color: transparent; font-weight: 400; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .dropped-note-pulse { animation-name: droppedNoteFade; }
+      @keyframes droppedNoteFade {
+        0%, 66.7% { color: #dc2626; }
+        100% { color: var(--ba-text-muted); }
+      }
+    }
+
     .relaxed-rules {
       border: 1px solid var(--ba-warning, #f59e0b);
       border-left: 4px solid var(--ba-warning, #f59e0b);
@@ -988,6 +1051,18 @@
       font-weight: 700;
       font-size: 0.7rem;
       vertical-align: middle;
+    }
+
+    /* Rashi chart size scales with the browser width and with how many slots are in the dossier
+       (one shared size for every card; 1 slot > 2 slots > 3-5 slots); never wider than the card */
+    .scrutiny-grid { --kundali-size: clamp(260px, 21vw, 340px); }
+    .scrutiny-grid.cards-2 { --kundali-size: clamp(300px, 27vw, 460px); }
+    .scrutiny-grid.cards-1 { --kundali-size: clamp(320px, 36vw, 600px); }
+    .kundali-wrapper svg {
+      width: var(--kundali-size);
+      height: auto;
+      max-width: 100%;
+      aspect-ratio: 1 / 1;
     }
 
     .kundali-wrapper {
@@ -1135,6 +1210,51 @@
       color: var(--ba-primary);
       text-decoration: none;
       margin-right: 1rem;
+    }
+
+    /* Header actions wrap instead of widening the page */
+    .header-actions { flex-wrap: wrap; justify-content: flex-end; }
+    .candidate-left > div:last-child, .day-slot-row .candidate-left > div:last-child { min-width: 0; }
+
+    /* ---------- Phones and small tablets ---------- */
+    @media (max-width: 640px) {
+      /* Header: not sticky, compact, actions as a wrapping row of small chips */
+      header { position: static; padding: 0.6rem 0.75rem; }
+      .header-container { gap: 0.5rem; }
+      .brand-emblem { width: 34px; height: 34px; }
+      .brand-title { font-size: 1.05rem; }
+      .brand-sub { display: none; }
+      .header-actions { width: 100%; justify-content: flex-start; gap: 0.4rem; }
+      .header-actions .btn { padding: 0.3rem 0.55rem; font-size: 0.72rem; white-space: nowrap; }
+
+      main { padding: 0 0.6rem; margin: 0.75rem auto; }
+      .panel { padding: 1rem; }
+
+      /* Stepper: compact tabs; the active one is scrolled into view by goToStep */
+      .step-item { min-width: 150px; padding: 0.6rem 0.75rem; gap: 0.5rem; }
+      .step-info-desc { display: none; }
+      .step-circle { width: 26px; height: 26px; font-size: 0.8rem; }
+
+      /* Step 3 cards stack: score + time, chips, then a full-width select button */
+      .candidate-card, .day-slot-row { flex-direction: column; align-items: stretch; gap: 0.6rem; }
+      .candidate-left { align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+      .candidate-left > div:last-child { flex: 1 1 100%; } /* details on their own row so chips flow across */
+      .candidate-window { font-size: 0.92rem; }
+      .candidate-card > .btn, .day-slot-row > .btn { width: 100%; }
+
+      /* Selection bar: one slim line */
+      .floating-dock { bottom: 0.5rem; padding: 0.45rem 0.6rem; gap: 0.5rem; flex-wrap: nowrap; }
+      .dock-count { white-space: nowrap; font-size: 0.8rem; }
+      .dock-count-long { display: none; }
+      .dock-count-short { display: inline; }
+      .dock-actions { gap: 0.4rem !important; }
+      .dock-actions .btn { padding: 0.35rem 0.6rem; font-size: 0.75rem; white-space: nowrap; }
+      .dock-actions .btn-secondary { display: none; }
+
+      /* Step 4: let pills and long values wrap rather than clip */
+      .traffic-pill, .omitted-pill { white-space: normal; }
+      .panchanga-table td:first-child { width: 36%; }
+      .scrutiny-card { padding: 1rem; }
     }
 
     /* Print-only report blocks (built by buildPrintReport before printing) */
@@ -1326,7 +1446,7 @@
           <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
         </div>
         <div>
-          <div class="brand-title">BharatAstrology.org</div>
+          <h1 class="brand-title">BharatAstrology.org</h1>
           <div class="brand-sub">Bharatheya Vasthu Jyothisha Padanasala • Business Muhurtham Engine</div>
         </div>
       </div>
@@ -1344,28 +1464,28 @@
   <main>
     <!-- Stepper Ribbon -->
     <div class="stepper">
-      <div class="step-item active" id="stepTab1" onclick="goToStep(1)">
+      <div class="step-item active" id="stepTab1" onclick="goToStep(1)" role="button" tabindex="0" aria-current="step" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();goToStep(1);}">
         <div class="step-circle">1</div>
         <div>
           <div class="step-info-title">Profile & Details</div>
           <div class="step-info-desc">Promoter, Business & Date Range</div>
         </div>
       </div>
-      <div class="step-item" id="stepTab2" onclick="goToStep(2)">
+      <div class="step-item" id="stepTab2" onclick="goToStep(2)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();goToStep(2);}">
         <div class="step-circle">2</div>
         <div>
-          <div class="step-info-title">Rule Omissions</div>
+          <div class="step-info-title">Rule Settings</div>
           <div class="step-info-desc">Doshas, Horas & Exclusions</div>
         </div>
       </div>
-      <div class="step-item" id="stepTab3" onclick="goToStep(3)">
+      <div class="step-item" id="stepTab3" onclick="goToStep(3)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();goToStep(3);}">
         <div class="step-circle">3</div>
         <div>
           <div class="step-info-title">Shortlist Candidates</div>
           <div class="step-info-desc">Fast Math Filtered Slots</div>
         </div>
       </div>
-      <div class="step-item" id="stepTab4" onclick="goToStep(4)">
+      <div class="step-item" id="stepTab4" onclick="goToStep(4)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();goToStep(4);}">
         <div class="step-circle">4</div>
         <div>
           <div class="step-info-title">Top 5 Deep Scrutiny</div>
@@ -1378,7 +1498,7 @@
     <div class="panel active" id="panel1">
       <div class="panel-heading">
         <div>
-          <div class="panel-title">Step 1: Promoter & Business Profile</div>
+          <h2 class="panel-title">Step 1: Promoter & Business Profile</h2>
           <div class="panel-subtitle">Provide birth coordinates, business activity, and election search range.</div>
         </div>
         <button class="btn btn-secondary btn-sm" id="btnRestoreSession" style="display: none;" onclick="restoreFromLastSession()">🔄 Fill from Last Browser Session</button>
@@ -1445,7 +1565,7 @@
         </div>
         <div class="form-group">
           <label for="businessNature">Nature of Business (Primary Karaka)</label>
-          <select id="businessNature" class="form-control" onchange="updateNatureDescription()">
+          <select id="businessNature" class="form-control">
             <option value="TECH_AI" selected>Technology, Software & AI (Mercury / Budha)</option>
             <option value="RETAIL_FMCG">Retail, Supermarket & Consumer Goods (Moon / Venus)</option>
             <option value="CONSULTING_LAW">Consultancy, Education & Advisory (Jupiter / Guru)</option>
@@ -1522,7 +1642,7 @@
       </div>
 
       <div style="display: flex; justify-content: flex-end; margin-top: 2rem;">
-        <button class="btn btn-primary" onclick="goToStep(2)">Proceed to Step 2: Configure Rule Omissions →</button>
+        <button class="btn btn-primary" onclick="goToStep(2)">Proceed to Step 2: Configure Rules →</button>
       </div>
     </div>
 
@@ -1530,12 +1650,12 @@
     <div class="panel" id="panel2">
       <div class="panel-heading">
         <div>
-          <div class="panel-title">Step 2: Rule Configuration & Inauspicious Omissions</div>
+          <h2 class="panel-title">Step 2: Rule Settings</h2>
           <div class="panel-subtitle">Select which classical doshas and timing rules can be omitted. Default is none omitted.</div>
         </div>
         <div class="preset-bar">
           <button class="btn btn-primary btn-sm preset-btn" id="btnPreset_orthodox" onclick="applyRulePreset('orthodox')" title="Strict Classical: Enforces all traditional Vedic & Kerala doshas (Rahu Kalam, Gulika, Sankranti, Vadha Tara, Ashtama Shuddhi)">Strict Orthodox Kerala (Default)</button>
-          <button class="btn btn-secondary btn-sm preset-btn" id="btnPreset_pragmatic" onclick="applyRulePreset('pragmatic')" title="Office & Banking Hours: Enforces Rahu/Gulika/Ashtama Shuddhi, relaxes minor combustion/Yamagandam">Commercial Pragmatic</button>
+          <button class="btn btn-secondary btn-sm preset-btn" id="btnPreset_pragmatic" onclick="applyRulePreset('pragmatic')" title="Commercial Pragmatic: Enforces Rahu/Gulika/Ashtama Shuddhi, relaxes minor combustion/Yamagandam">Commercial Pragmatic</button>
           <button class="btn btn-secondary btn-sm preset-btn" id="btnPreset_tech" onclick="applyRulePreset('tech')" title="Tech Venture: Prioritizes Mercury & KP 2-10-11, relaxes solar transition">Modern Tech Startup</button>
           <button class="btn btn-secondary btn-sm preset-btn" id="btnPreset_relax" onclick="applyRulePreset('relax')" title="Open Evaluation: Relaxes doshas to discover the strongest positive planetary hours">Relax Restrictions (Discover All)</button>
           <button class="btn btn-secondary btn-sm preset-btn" id="btnPreset_reset" onclick="applyRulePreset('orthodox')" title="Reset all checkboxes back to strict classical defaults">↺ Reset to Default</button>
@@ -1551,75 +1671,75 @@
       <div class="rule-accordion" id="accGroupVedic">
         <div class="rule-header" onclick="toggleAccordion('accVedic')">
           <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <span>Vedic & Kerala Panchangam (7 Rules)</span>
+            <span>Vedic & Kerala Panchangam (8 Rules)</span>
             <span class="tag tag-accent" id="badgeGroupVedic">ACTIVE</span>
           </div>
           <span id="accVedicIcon">▼</span>
         </div>
         <div class="rule-content" id="accVedic">
-          <label class="rule-toggle-item">
-            <select id="sunriseConvention" class="form-control" style="max-width: 15rem;">
+          <div class="rule-toggle-item rule-select-item">
+            <div>
+              <label class="rule-name" for="sunriseConvention">Sunrise Convention</label>
+              <div class="rule-hint">Sets sunrise/sunset for Rahu Kalam, Gulika, Yamagandam and the Kollam month start. Upper limb matches most published panchangams; disc centre is about 3 min later.</div>
+            </div>
+            <select id="sunriseConvention" class="form-control">
               <option value="limb" selected>Upper limb + refraction</option>
               <option value="centre">Disc centre, no refraction</option>
             </select>
-            <div>
-              <div class="rule-name">Sunrise Convention</div>
-              <div class="rule-hint">Sets sunrise/sunset for Rahu Kalam, Gulika, Yamagandam and the Kollam month start. Upper limb matches most published panchangams; disc centre is about 3 min later.</div>
-            </div>
-          </label>
+          </div>
           <label class="rule-toggle-item">
             <input type="checkbox" id="omitRahuKalam">
             <div>
-              <div class="rule-name">Omit Rahu Kalam</div>
+              <div class="rule-name">Ignore Rahu Kalam rule</div>
               <div class="rule-hint">1/8th of daytime governed by Rahu; causes sudden instability.</div>
             </div>
           </label>
           <label class="rule-toggle-item">
             <input type="checkbox" id="omitGulikaKalam">
             <div>
-              <div class="rule-name">Omit Gulika Kalam (Mandi)</div>
+              <div class="rule-name">Ignore Gulika Kalam (Mandi) rule</div>
               <div class="rule-hint">Saturn's 8-part segment; traditional Kerala friction point.</div>
             </div>
           </label>
           <label class="rule-toggle-item">
             <input type="checkbox" id="omitYamagandam">
             <div>
-              <div class="rule-name">Omit Yamagandam</div>
+              <div class="rule-name">Ignore Yamagandam rule</div>
               <div class="rule-hint">Jupiter's malefic sub-period causing financial friction and delays.</div>
             </div>
           </label>
           <label class="rule-toggle-item">
             <input type="checkbox" id="omitMasaSankramana">
             <div>
-              <div class="rule-name">Omit Masa Sankramana Exclusion</div>
+              <div class="rule-name">Ignore Masa Sankramana rule</div>
               <div class="rule-hint">±16 ghatikas around solar ingress (Sankranti day transition).</div>
             </div>
           </label>
           <label class="rule-toggle-item">
             <input type="checkbox" id="omitAshtamaShuddhi">
             <div>
-              <div class="rule-name">Omit Ashtama Shuddhi Enforcement</div>
+              <div class="rule-name">Ignore Ashtama Shuddhi rule</div>
               <div class="rule-hint">Allow planets to occupy 8th house from election Lagna / natal Moon.</div>
             </div>
           </label>
           <label class="rule-toggle-item">
             <input type="checkbox" id="omitVadhaTara">
             <div>
-              <div class="rule-name">Omit Adverse Tara (Vipat 3 / Pratyak 5 / Vadha 7) Veto</div>
+              <div class="rule-name">Ignore Adverse Tara rule (Vipat 3 / Pratyak 5 / Vadha 7)</div>
               <div class="rule-hint">1st cycle from Janma: all three rejected; 2nd/3rd cycle: only Vipat pada 1, Pratyak pada 4, Vadha pada 3 (Muhurta Chintamani).</div>
             </div>
           </label>
           <label class="rule-toggle-item">
             <input type="checkbox" id="omitPanchangaVetoes">
             <div>
-              <div class="rule-name">Omit Panchanga Vetoes</div>
-              <div class="rule-hint">Amavasya, Vishti (Bhadra) karana, Vyatipata / Vaidhriti yoga and Chandrashtama (Moon 8th from Janma rashi). Omitted slots still lose 20 points.</div>
+              <div class="rule-name">Ignore Panchanga veto rules</div>
+              <div class="rule-hint">Amavasya, Vishti (Bhadra) karana, Vyatipata / Vaidhriti yoga and Chandrashtama (Moon 8th from Janma rashi). Slots kept this way still lose 20 points.</div>
             </div>
           </label>
           <label class="rule-toggle-item">
             <input type="checkbox" id="omitCombustion">
             <div>
-              <div class="rule-name">Omit Combustion (Astangata) Penalties</div>
+              <div class="rule-name">Ignore Combustion (Astangata) rule</div>
               <div class="rule-hint">Allow business Karaka to be within solar orb without penalty.</div>
             </div>
           </label>
@@ -1639,7 +1759,7 @@
           <label class="rule-toggle-item">
             <input type="checkbox" id="omitKpNegation">
             <div>
-              <div class="rule-name">Omit KP Sub-Lord 8/12 Negation Filter</div>
+              <div class="rule-name">Ignore KP Sub-Lord 8/12 negation rule</div>
               <div class="rule-hint">Allow 10th cuspal sub-lord to connect to 8th and 12th houses without veto.</div>
             </div>
           </label>
@@ -1659,7 +1779,7 @@
           <label class="rule-toggle-item">
             <input type="checkbox" id="omitVocMoon">
             <div>
-              <div class="rule-name">Omit Void of Course (VoC) Moon</div>
+              <div class="rule-name">Ignore Void-of-Course Moon rule</div>
               <div class="rule-hint">Western electional rule: Moon forming no applying aspects before sign ingress.</div>
             </div>
           </label>
@@ -1679,7 +1799,7 @@
           <label class="rule-toggle-item">
             <input type="checkbox" id="omitBaziBreakers">
             <div>
-              <div class="rule-name">Omit BaZi Year & Personal Breaker Days</div>
+              <div class="rule-name">Ignore BaZi clash-day rule</div>
               <div class="rule-hint">Earthly branch clashes (Liu Chong) against promoter's birth animal.</div>
             </div>
           </label>
@@ -1696,7 +1816,7 @@
     <div class="panel" id="panel3">
       <div class="panel-heading">
         <div>
-          <div class="panel-title">Step 3: Algorithmic Candidate Shortlist</div>
+          <h2 class="panel-title">Step 3: Algorithmic Candidate Shortlist</h2>
           <div class="panel-subtitle" id="calculationSummaryText">Ranked auspicious slots narrowed down via multi-system consensus.</div>
         </div>
         <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
@@ -1730,10 +1850,10 @@
 
       <!-- Persistent Floating Selection Dock -->
       <div class="floating-dock" id="floatingDock">
-        <div>
-          <span style="font-weight: 700; font-size: 1.1rem; color: var(--ba-primary);" id="selectedCountText">0</span> of 5 Candidates Selected for Deep Dive
+        <div class="dock-count" aria-live="polite">
+          <span style="font-weight: 700; font-size: 1.1rem; color: var(--ba-primary);" id="selectedCountText">0</span> of 5<span class="dock-count-long"> Candidates Selected for Deep Dive</span><span class="dock-count-short"> selected</span>
         </div>
-        <div style="display: flex; gap: 0.75rem;">
+        <div class="dock-actions" style="display: flex; gap: 0.75rem;">
           <button class="btn btn-secondary btn-sm" onclick="goToStep(2)">← Adjust Rules</button>
           <button class="btn btn-primary" id="btnScrutinize" onclick="proceedToDeepDive()" disabled>Proceed to Top 5 Deep Scrutiny →</button>
         </div>
@@ -1744,7 +1864,7 @@
     <div class="panel" id="panel4">
       <div class="panel-heading">
         <div>
-          <div class="panel-title">Step 4: Top 5 Deep Scrutiny & Executive Dossier</div>
+          <h2 class="panel-title">Step 4: Top 5 Deep Scrutiny & Executive Dossier</h2>
           <div class="panel-subtitle">Detailed Astrological Analysis, D1 Kundali Charts, KP Cuspal breakdown, and Auspicious Ceremony Action Plan.</div>
         </div>
         <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
@@ -1836,6 +1956,9 @@
     // Civil date in Malayalam, e.g. "2026 നവംബർ 26, വ്യാഴം"
     const formatDateMl = (d) => d.toLocaleDateString("ml-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
 
+    // Chart cell labels; unique per sign (a 4-letter cut gave "Vris" for both Vrishabha and Vrischikam)
+    const RASHI_ABBR = ["Mesha", "Vrsh", "Mithu", "Kark", "Simha", "Kanya", "Thula", "Vrsc", "Dhanu", "Makar", "Kumbh", "Meena"];
+
     const RASHI_NAMES = [
       "Mesha (Aries)", "Vrishabha (Taurus)", "Mithuna (Gemini)", "Karkidakam (Cancer)",
       "Simha (Leo)", "Kanya (Virgo)", "Thula (Libra)", "Vrischikam (Scorpio)",
@@ -1910,13 +2033,40 @@
       }, { once: true });
     }
 
+    // Brief status message (announced politely to screen readers), e.g. after an engine change
+    let toastTimer = null;
+    function showToast(message) {
+      let toast = document.getElementById("appToast");
+      if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "appToast";
+        toast.className = "app-toast";
+        toast.setAttribute("role", "status");
+        toast.setAttribute("aria-live", "polite");
+        document.body.appendChild(toast);
+      }
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 3500);
+    }
+
+    // Redraw the dossier without losing the reader's place (emptying the cards briefly shortens the page)
+    function rerenderDossierKeepingScroll() {
+      const y = window.scrollY;
+      renderScrutinyCards();
+      window.scrollTo(0, y);
+      setTimeout(() => window.scrollTo(0, y), 0); // again after row alignment
+    }
+
     function toggleResultLanguage() {
       currentResultLang = (currentResultLang === "en") ? "ml" : "en";
       const btn = document.getElementById("btnLangToggle");
       if (btn) {
         btn.textContent = currentResultLang === "ml" ? "🌐 ഭാഷ: മലയാളം" : "🌐 Language: English";
       }
-      renderScrutinyCards();
+      document.documentElement.setAttribute("lang", currentResultLang === "ml" ? "ml" : "en");
+      rerenderDossierKeepingScroll();
     }
 
     function setResultLanguage(lang) {
@@ -1925,7 +2075,8 @@
       if (btn) {
         btn.textContent = currentResultLang === "ml" ? "🌐 ഭാഷ: മലയാളം" : "🌐 Language: English";
       }
-      renderScrutinyCards();
+      document.documentElement.setAttribute("lang", currentResultLang === "ml" ? "ml" : "en");
+      rerenderDossierKeepingScroll();
     }
 
     // Initialize Default Dates & Rules (Today to Today + 3 Months, Step 2 Default Orthodox)
@@ -1935,6 +2086,7 @@
       initAutoSave();
       updateRestoreButtonVisibility();
       initRuleCheckboxListeners();
+      initStep1Validation();
       triggerLangPulseOnce(); // Pulse once on first load without glowing
       applyTheme(getThemePref()); // sync theme button label with the boot-time theme
       initSwissEphemeris(); // Initialize Swiss Ephemeris AGPL default with internal fallback
@@ -1967,6 +2119,9 @@
 
       // Validate 4-digit year constraint
       validateDateInput(startEl);
+      // The end-date picker cannot go before the start date
+      const endEl = document.getElementById("dateEnd");
+      if (endEl && startEl.value) endEl.min = startEl.value;
 
       if (startEl.value && startEl.value !== todayStr) {
         startEl.classList.add("date-highlight");
@@ -1983,6 +2138,66 @@
       onStartDateChange();
     }
 
+    // Inline field error (announced by screen readers); msg null clears it
+    function setFieldError(id, msg) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      let err = document.getElementById(id + "Error");
+      if (msg) {
+        if (!err) {
+          err = document.createElement("div");
+          err.id = id + "Error";
+          err.className = "field-error";
+          err.setAttribute("role", "alert");
+          el.insertAdjacentElement("afterend", err);
+        }
+        err.textContent = msg;
+        el.setAttribute("aria-invalid", "true");
+        el.setAttribute("aria-describedby", err.id);
+      } else {
+        if (err) err.remove();
+        el.removeAttribute("aria-invalid");
+        el.removeAttribute("aria-describedby");
+      }
+    }
+
+    // Step 1 checks: promoter name, both dates, end not before start. focusFirst moves focus to the first problem.
+    function validateStep1(focusFirst = true) {
+      const val = (id) => (document.getElementById(id) ? document.getElementById(id).value.trim() : "");
+      const name = val("promoterName"), start = val("dateStart"), end = val("dateEnd");
+      const errors = {
+        promoterName: name ? null : "Enter the promoter's name.",
+        dateStart: start ? null : "Choose a start date.",
+        dateEnd: !end ? "Choose an end date." : (start && end < start ? "The end date can't be before the start date." : null)
+      };
+      Object.entries(errors).forEach(([id, msg]) => setFieldError(id, msg));
+      const firstBad = Object.keys(errors).find(id => errors[id]);
+      if (firstBad && focusFirst) {
+        const el = document.getElementById(firstBad);
+        if (el && typeof el.scrollIntoView === "function") el.scrollIntoView({ block: "center" });
+        if (el && typeof el.focus === "function") el.focus({ preventScroll: true });
+        const count = Object.values(errors).filter(Boolean).length;
+        showToast(`Please fix ${count === 1 ? "the highlighted field" : count + " highlighted fields"} in Step 1.`);
+      }
+      return !firstBad;
+    }
+
+    // Re-check as the user corrects a field that is currently flagged
+    function initStep1Validation() {
+      ["promoterName", "dateStart", "dateEnd"].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const recheck = () => {
+          if (["promoterName", "dateStart", "dateEnd"].some(f => {
+            const e = document.getElementById(f);
+            return e && e.getAttribute("aria-invalid") === "true";
+          })) validateStep1(false);
+        };
+        el.addEventListener("input", recheck);
+        el.addEventListener("change", recheck);
+      });
+    }
+
     function setSingleDayMode() {
       const startEl = document.getElementById("dateStart");
       const endEl = document.getElementById("dateEnd");
@@ -1992,6 +2207,7 @@
       }
       endEl.value = startEl.value;
       validateDateInput(endEl);
+      autoSaveSession(); // values set in code fire no input event
     }
 
     function addRangeWeeks(weeks) {
@@ -2001,6 +2217,7 @@
       const newEnd = new Date(baseDate.getTime() + weeks * 7 * 86400000);
       endEl.value = newEnd.toISOString().split("T")[0];
       validateDateInput(endEl);
+      autoSaveSession(); // values set in code fire no input event
     }
 
     function addRangeMonths(months) {
@@ -2011,6 +2228,7 @@
       newEnd.setMonth(newEnd.getMonth() + months);
       endEl.value = newEnd.toISOString().split("T")[0];
       validateDateInput(endEl);
+      autoSaveSession(); // values set in code fire no input event
     }
 
     function validateDateInput(inputEl) {
@@ -2078,20 +2296,29 @@
     // Wizard Navigation
     let currentStep = 1;
     function goToStep(step) {
+      // Leaving Step 1 needs a valid profile and date range
+      if (step >= 2 && currentStep === 1 && !validateStep1()) return;
       // Inputs changed since the last search: recalculate (ticks kept), then show the requested step
       if ((step === 3 || step === 4) && searchSettingsChanged && lastCalcInfo) {
+        const toDossier = step === 4;
+        suppressDroppedPulse = toDossier;
         calculateMuhurthamFast(); // clears the flag and lands on Step 3
-        if (step === 4 && selectedCandidates.size > 0) proceedToDeepDive();
+        suppressDroppedPulse = false;
+        if (toDossier && selectedCandidates.size > 0) proceedToDeepDive();
+        else pulseDroppedNotes();
         return;
       }
       if (step === 4 && selectedCandidates.size === 0) {
         alert("Please select at least one candidate slot from Step 3 to view deep scrutiny.");
         return;
       }
+      if (step === 4 && isDossierStale()) renderScrutinyCards();
       currentStep = step;
       document.querySelectorAll(".step-item").forEach((el, idx) => {
         el.classList.toggle("active", idx + 1 === step);
         if (idx + 1 < step) el.classList.add("completed");
+        if (idx + 1 === step) el.setAttribute("aria-current", "step");
+        else el.removeAttribute("aria-current");
       });
       document.querySelectorAll(".panel").forEach((el, idx) => {
         el.classList.toggle("active", idx + 1 === step);
@@ -2104,7 +2331,22 @@
         triggerLangPulseOnce();
       }
       if (step === 4) scheduleScrutinyAlignment(); // cards are measurable only once the panel is visible
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      pulseDroppedNotes();
+      // Keep the active tab visible when the stepper scrolls sideways (phones)
+      const stepper = document.querySelector(".stepper");
+      const activeTab = document.getElementById("stepTab" + step);
+      if (stepper && activeTab && stepper.scrollWidth > stepper.clientWidth) {
+        const left = activeTab.getBoundingClientRect().left - stepper.getBoundingClientRect().left + stepper.scrollLeft;
+        stepper.scrollLeft = Math.max(0, left - 12);
+      }
+      // Show the new step from its top and move focus to its heading (instant, so it also works in
+      // background tabs where smooth scrolling never runs)
+      window.scrollTo(0, 0);
+      const heading = document.querySelector(`#panel${step} .panel-title`);
+      if (heading) {
+        heading.setAttribute("tabindex", "-1");
+        if (typeof heading.focus === "function") heading.focus({ preventScroll: true });
+      }
     }
 
     // Toggle Past Audit
@@ -2214,8 +2456,16 @@
       });
     }
 
+    // Expose the highlighted preset to assistive tech (and keep it in step with the visual state)
+    function syncPresetPressed() {
+      document.querySelectorAll(".preset-btn").forEach(btn => {
+        btn.setAttribute("aria-pressed", btn.classList.contains("btn-primary") ? "true" : "false");
+      });
+    }
+
     // Preset Rules Handler with Active Visual State & Button Feedback
     function applyRulePreset(preset) {
+      setTimeout(syncPresetPressed, 0); // after this function and checkRulePresetState update the classes
       markSearchSettingsChanged(); // presets set checkboxes in code, which fires no change event
       const allPresets = ["orthodox", "pragmatic", "tech", "relax", "reset"];
       allPresets.forEach(p => {
@@ -2442,7 +2692,18 @@
         const el = document.getElementById(id);
         if (el) {
           el.addEventListener("change", checkRulePresetState);
+          el.addEventListener("change", syncPresetPressed);
         }
+      });
+      // Explicit accessible names for the step tabs and the astrology-system checkboxes
+      document.querySelectorAll(".step-item").forEach((tab, i) => {
+        const title = tab.querySelector(".step-info-title");
+        tab.setAttribute("aria-label", `Step ${i + 1}: ${title ? title.textContent.trim() : ""}`);
+      });
+      document.querySelectorAll(".system-card").forEach(card => {
+        const box = card.querySelector('input[type="checkbox"]');
+        const title = card.querySelector(".system-card-title");
+        if (box && title) box.setAttribute("aria-label", title.textContent.trim());
       });
 
       // Synchronize Step 1 system checkboxes with Step 2 UI in real time
@@ -2713,6 +2974,15 @@
       }
       return true;
     }
+
+    // Business karaka planet for each "Nature of Business" option value (matches the option labels;
+    // the old checks used values the form never produced, so every type but Tech fell back to Jupiter).
+    // Sun is not used as a karaka here because it cannot be combust; Healthcare uses Mars.
+    const BUSINESS_KARAKA = {
+      TECH_AI: "mercury", RETAIL_FMCG: "venus", CONSULTING_LAW: "jupiter", FINANCE_FINTECH: "jupiter",
+      MFG_HEAVY: "saturn", HOSPITALITY_FOOD: "venus", HEALTHCARE_PHARMA: "mars"
+    };
+    const KARAKA_LABEL = { mercury: "Budha", venus: "Shukra", jupiter: "Guru", mars: "Kuja", saturn: "Shani" };
 
     // Classical combustion (Astangata) orbs from the Sun, Surya Siddhanta (direct motion)
     const COMBUSTION_ORBS = { mercury: 14, venus: 10, mars: 17, jupiter: 11, saturn: 15 };
@@ -3017,9 +3287,15 @@
       const hh = String(lastCalcInfo.time.getHours()).padStart(2, "0");
       const mm = String(lastCalcInfo.time.getMinutes()).padStart(2, "0");
       const ss = String(lastCalcInfo.time.getSeconds()).padStart(2, "0");
-      const dropped = lastCalcInfo.droppedShortlisted || 0;
+      const kept = lastCalcInfo.keptShortlisted || 0;
       return `Results recalculated at ${hh}:${mm}:${ss} with ${lastCalcInfo.engine} (${lastCalcInfo.count} slot${lastCalcInfo.count === 1 ? "" : "s"}).` +
-        (dropped ? ` ${dropped} shortlisted slot${dropped === 1 ? " is" : "s are"} no longer in the results with the current settings and ${dropped === 1 ? "was" : "were"} unticked.` : "");
+        (kept ? ` ${kept} shortlisted slot${kept === 1 ? " was" : "s were"} kept from your previous search.` : "");
+    }
+    function getDroppedShortlistText() {
+      const dropped = (lastCalcInfo && lastCalcInfo.droppedShortlisted) || 0;
+      return dropped
+        ? `${dropped} shortlisted slot${dropped === 1 ? " is" : "s are"} no longer in the results with the current settings and ${dropped === 1 ? "was" : "were"} unticked.`
+        : "";
     }
     function appendLastCalcLine(textDiv) {
       const text = getLastCalcText();
@@ -3029,7 +3305,39 @@
       line.style.color = "var(--ba-text-muted)";
       line.style.marginTop = "0.15rem";
       line.textContent = "✓ " + text;
+      const droppedText = getDroppedShortlistText();
+      if (droppedText) {
+        line.appendChild(document.createTextNode(" "));
+        const note = document.createElement("span");
+        note.className = "dropped-note";
+        note.textContent = droppedText;
+        line.appendChild(note);
+      }
       textDiv.appendChild(line);
+    }
+
+    // Pulse the "shortlisted slot unticked" note once per calculation, the first time it is visible;
+    // it starts red and fades to the normal text colour after 3 s
+    let suppressDroppedPulse = false; // set while passing through Step 3 on the way back to Step 4
+    function pulseDroppedNotes() {
+      // A pulse class left on a hidden banner would replay when its panel is shown again
+      ["step3FallbackBanner", "step4FallbackBanner"].forEach(id => {
+        const banner = document.getElementById(id);
+        if (banner && !banner.offsetParent) {
+          banner.querySelectorAll(".dropped-note-pulse").forEach(n => n.classList.remove("dropped-note-pulse"));
+        }
+      });
+      // One pulse per calculation in total, on whichever of Step 3 / Step 4 shows the note first
+      if (suppressDroppedPulse || !lastCalcInfo || !lastCalcInfo.droppedShortlisted || lastCalcInfo.notePulsed) return;
+      ["step3FallbackBanner", "step4FallbackBanner"].forEach(id => {
+        const banner = document.getElementById(id);
+        if (lastCalcInfo.notePulsed || !banner || !banner.offsetParent) return;
+        const note = banner.querySelector(".dropped-note");
+        if (!note) return;
+        note.classList.add("dropped-note-pulse");
+        setTimeout(() => note.classList.remove("dropped-note-pulse"), 4600); // animation is 4.5 s
+        lastCalcInfo.notePulsed = true;
+      });
     }
 
     // Internal engine chosen in the engine switcher (not a fallback because Swiss Ephemeris failed)
@@ -3048,8 +3356,11 @@
     // (calculateMuhurthamFast always lands on Step 3)
     function recalculateKeepingStep() {
       const wasOnStep4 = currentStep === 4;
+      suppressDroppedPulse = wasOnStep4;
       calculateMuhurthamFast();
+      suppressDroppedPulse = false;
       if (wasOnStep4 && selectedCandidates.size > 0) proceedToDeepDive();
+      else pulseDroppedNotes();
     }
 
     // From Internal Only: switch back to Auto (Swiss Ephemeris) and recalculate
@@ -3354,9 +3665,15 @@
         SWISSEPH_CONFIG.mode = "AUTO";
       }
       updateEphemerisUI();
+      const modeName = { AUTO: "Auto (Swiss Ephemeris, internal if offline)", SWISSEPH_ONLY: "Swiss Ephemeris only", INTERNAL_ONLY: "Internal Ephemeris only" }[SWISSEPH_CONFIG.mode];
       // If user is currently on step 3 or 4, re-calculate with chosen engine (staying on the same step)
-      if (currentStep >= 3) {
+      if (currentStep >= 3 && lastCalcInfo) {
+        const y = window.scrollY;
         recalculateKeepingStep();
+        window.scrollTo(0, y);
+        showToast(`Engine: ${modeName}. Results recalculated (${lastCalcInfo.count} slots).`);
+      } else {
+        showToast(`Engine: ${modeName}. It will be used for the next search.`);
       }
       updateFallbackBanners();
     }
@@ -3586,7 +3903,7 @@
       tag.className = "tag tag-kalam";
       const what = cand.kalamOverlaps.map(o => `${o.name} ${o.from}-${o.to}`).join(", ");
       tag.textContent = `⚠ Overlaps ${what} · ${cand.cleanSegments.length ? "Clean: " + cand.cleanSegments.map(s => s.text).join(", ") : "no clean time"}`;
-      tag.title = "This slot overlaps an inauspicious period because that rule is omitted in Step 2. Use the clean time shown.";
+      tag.title = "This slot overlaps an inauspicious period because that rule is ignored in Step 2. Use the clean time shown.";
       return tag;
     }
 
@@ -3835,10 +4152,12 @@
       const endStr = document.getElementById("dateEnd").value;
       const nature = document.getElementById("businessNature").value;
 
-      if (!startStr || !endStr) {
-        alert("Please specify valid start and end dates.");
+      if (!validateStep1(false)) {
+        goToStep(1);
+        validateStep1(true); // show the problems and focus the first one
         return;
       }
+      autoSaveSession(); // remember the inputs of every search for "Fill from Last Browser Session"
 
       // Read Promoter Coordinates
       const dobStr = document.getElementById("promoterDob").value || "1992-08-15";
@@ -4024,11 +4343,7 @@
           const isVoc = isMoonVoidOfCourse(jd);
 
           // Combustion (Astangata) Check for Core Business Karaka, using that planet's classical orb
-          let karakaKey = "jupiter";
-          if (nature === "TECH_AI") karakaKey = "mercury";
-          else if (nature === "MEDIA_CREATIVE" || nature === "HOSPITALITY_TOURISM") karakaKey = "venus";
-          else if (nature === "MANUFACTURING_HEAVY") karakaKey = "mars";
-          else if (nature === "REAL_ESTATE_INFRA") karakaKey = "saturn";
+          const karakaKey = BUSINESS_KARAKA[nature] || "jupiter";
           const karakaLong = planets[karakaKey];
 
           let sunDiff = Math.abs(sunLong - karakaLong);
@@ -4099,19 +4414,11 @@
             if (isMasaSankramana) score -= 20;
             if (isKarakaCombust) score -= 12;
 
-            // Business Nature Karaka Alignment
-            if (nature === "TECH_AI") {
-              const mercRashi = Math.floor(planets.mercury / 30);
-              if (mercRashi === asc.rashiIdx || mercRashi === ((asc.rashiIdx + 9) % 12)) {
-                score += 8;
-                consensusBadges.push("Budha Karaka Alignment (+8)");
-              }
-            } else if (nature === "RETAIL_FMCG" || nature === "CONSULTING_LAW") {
-              const jupRashi = Math.floor(planets.jupiter / 30);
-              if (jupRashi === asc.rashiIdx || jupRashi === ((asc.rashiIdx + 8) % 12)) {
-                score += 8;
-                consensusBadges.push("Guru Karaka Alignment (+8)");
-              }
+            // Business karaka in the lagna or the 10th house (karma bhava) from it
+            const karakaRashi = Math.floor(karakaLong / 30);
+            if (karakaRashi === asc.rashiIdx || karakaRashi === ((asc.rashiIdx + 9) % 12)) {
+              score += 8;
+              consensusBadges.push(`${KARAKA_LABEL[karakaKey]} Karaka Alignment (+8)`);
             }
           }
 
@@ -4310,6 +4617,7 @@
         if (previouslyRejected.has(c.id)) rejectedCandidates.add(c.id);
       });
       lastCalcInfo.droppedShortlisted = [...previouslySelected].filter(id => !selectedCandidates.has(id)).length;
+      lastCalcInfo.keptShortlisted = selectedCandidates.size; // ticks carried over from the previous search
 
       // Update Fallback Notice Banners
       updateFallbackBanners();
@@ -4343,9 +4651,11 @@
     let currentSortMode = "chronological"; // Default to Chronological order
 
     function willSortChangeOutput() {
-      // 1. If in Calendar view, sorting does not reorder the fixed calendar grid
+      // 1. Calendar view: sorting orders the slots inside each day cell
       if (currentViewMode === "calendar") {
-        return false;
+        const perDay = {};
+        (generatedCandidates || []).forEach(c => { perDay[c.dateDisplay] = (perDay[c.dateDisplay] || 0) + 1; });
+        return Object.values(perDay).some(n => n > 1);
       }
 
       // 2. If 0 or 1 candidate, sorting cannot change output
@@ -4390,10 +4700,10 @@
         btn.disabled = true;
         btn.classList.add("btn-disabled");
         btn.setAttribute("aria-disabled", "true");
-        btn.textContent = "Change View";
+        btn.textContent = currentSortMode === "chronological" ? "📅 Sort: Chronological (Date & Time)" : "🌟 Sort: Recommendation (Score)";
 
         if (currentViewMode === "calendar") {
-          btn.title = "Sort is disabled in Calendar View. Click or switch to List View to sort.";
+          btn.title = "Each day has a single slot, so sorting would not change the calendar";
         } else if (!generatedCandidates || generatedCandidates.length <= 1) {
           btn.title = "Sorting requires multiple eligible Muhurtham slots";
         } else {
@@ -4439,16 +4749,19 @@
       renderCurrentStep3View();
     }
 
+    // Best first: score, then Chandrabala, Nakshatra, Tithi, then earliest
+    function compareByRecommendation(a, b) {
+      const q = (c, k) => (c.quality && c.quality.parts ? c.quality.parts[k] : 0);
+      return (b.rawScore - a.rawScore) || (b.score - a.score) ||
+        (q(b, "chandrabala") - q(a, "chandrabala")) || (q(b, "nakshatra") - q(a, "nakshatra")) ||
+        (q(b, "tithi") - q(a, "tithi")) || (a.timestamp - b.timestamp);
+    }
+
     function applySorting() {
       if (currentSortMode === "chronological") {
         generatedCandidates.sort((a, b) => a.timestamp - b.timestamp);
       } else {
-        // Default: Recommendation (highest score first); ties broken by Chandrabala, Nakshatra, Tithi
-        const q = (c, k) => (c.quality && c.quality.parts ? c.quality.parts[k] : 0);
-        generatedCandidates.sort((a, b) =>
-          (b.rawScore - a.rawScore) || (b.score - a.score) ||
-          (q(b, "chandrabala") - q(a, "chandrabala")) || (q(b, "nakshatra") - q(a, "nakshatra")) ||
-          (q(b, "tithi") - q(a, "tithi")) || (a.timestamp - b.timestamp));
+        generatedCandidates.sort(compareByRecommendation);
       }
     }
 
@@ -4570,6 +4883,7 @@
             chk.style.cursor = "pointer";
             chk.style.accentColor = "var(--ba-primary)";
             chk.checked = isSelected;
+            chk.setAttribute("aria-label", `Select ${cand.dateDisplay}, ${cand.timeWindow}, score ${cand.score}% for scrutiny`);
             chk.onchange = (e) => {
               e.stopPropagation();
               toggleCandidateSelect(cand.id);
@@ -4663,6 +4977,7 @@
         chk.style.cursor = "pointer";
         chk.style.accentColor = "var(--ba-primary)";
         chk.checked = selectedCandidates.has(cand.id);
+        chk.setAttribute("aria-label", `Select ${cand.dateDisplay}, ${cand.timeWindow}, score ${cand.score}% for scrutiny`);
         chk.onchange = (e) => {
           e.stopPropagation();
           toggleCandidateSelect(cand.id);
@@ -4797,6 +5112,9 @@
       });
 
       const weekdayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const parseLocalDate = (s) => { if (!s) return null; const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+      const rangeStart = parseLocalDate(document.getElementById("dateStart").value);
+      const rangeEnd = parseLocalDate(document.getElementById("dateEnd").value);
 
       sortedMonths.forEach(({ year, month }) => {
         const monthBlock = document.createElement("div");
@@ -4822,17 +5140,26 @@
           grid.appendChild(wHeader);
         });
 
-        // Blank cells before the 1st of month
-        const firstDayIdx = new Date(year, month, 1).getDay();
+        // Show only the weeks the search range touches (from the week of the start date to the
+        // week of the end date) instead of whole months with empty leading/trailing weeks
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        let firstShown = 1, lastShown = daysInMonth;
+        if (rangeStart && rangeStart.getFullYear() === year && rangeStart.getMonth() === month) {
+          firstShown = Math.max(1, rangeStart.getDate() - rangeStart.getDay());
+        }
+        if (rangeEnd && rangeEnd.getFullYear() === year && rangeEnd.getMonth() === month) {
+          lastShown = Math.min(daysInMonth, rangeEnd.getDate() + (6 - rangeEnd.getDay()));
+        }
+
+        // Blank cells before the first shown day so weekdays line up
+        const firstDayIdx = new Date(year, month, firstShown).getDay();
         for (let i = 0; i < firstDayIdx; i++) {
           const emptyCell = document.createElement("div");
           emptyCell.className = "calendar-day-cell empty";
           grid.appendChild(emptyCell);
         }
 
-        // Days of Month
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
+        for (let dayNum = firstShown; dayNum <= lastShown; dayNum++) {
           const cell = document.createElement("div");
           cell.className = "calendar-day-cell";
 
@@ -4898,6 +5225,15 @@
                 e.stopPropagation();
                 toggleCandidateSelect(slot.id);
               };
+              // Keyboard and screen-reader access: a toggle button with a descriptive name
+              pill.setAttribute("role", "button");
+              pill.setAttribute("tabindex", "0");
+              pill.setAttribute("aria-pressed", isSelected ? "true" : "false");
+              pill.setAttribute("aria-label", `${slot.dateDisplay}, ${slot.timeWindow}, score ${slot.score}%` +
+                (isRejected ? ", rejected in Step 4" : "") + (isSelected ? ", selected" : ""));
+              pill.onkeydown = (e) => {
+                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleCandidateSelect(slot.id); }
+              };
 
               cell.appendChild(pill);
             });
@@ -4927,9 +5263,11 @@
       renderCurrentStep3View();
     }
 
+    // Top 5 by score whatever the list's current sort (date order used to pick the earliest five)
     function autoSelectTop5() {
       selectedCandidates.clear();
-      generatedCandidates.filter(c => !rejectedCandidates.has(c.id)).slice(0, 5).forEach(c => selectedCandidates.add(c.id));
+      generatedCandidates.filter(c => !rejectedCandidates.has(c.id)).slice().sort(compareByRecommendation)
+        .slice(0, 5).forEach(c => selectedCandidates.add(c.id));
       renderCurrentStep3View();
     }
 
@@ -4975,6 +5313,15 @@
       }
     }
 
+    // Identifies what the Step 4 dossier was last drawn from (calculation + ticked slots), so opening
+    // Step 4 from the stepper after a recalculation or tick change redraws instead of showing old cards
+    let dossierRenderedFor = null;
+    const currentDossierKey = () => ({ calc: lastCalcInfo, ids: [...selectedCandidates].join("|") });
+    function isDossierStale() {
+      const now = currentDossierKey();
+      return !dossierRenderedFor || dossierRenderedFor.calc !== now.calc || dossierRenderedFor.ids !== now.ids;
+    }
+
     function renderScrutinyCards() {
       updateFallbackBanners();
       if (selectedCandidates.size === 0) return;
@@ -4982,8 +5329,12 @@
       const container = document.getElementById("scrutinyContainer");
       if (!container) return;
       container.textContent = "";
+      dossierRenderedFor = currentDossierKey();
 
-      const selectedList = generatedCandidates.filter(c => selectedCandidates.has(c.id));
+      // Ranks follow the score (best first), whatever order the Step 3 list is sorted in
+      const selectedList = generatedCandidates.filter(c => selectedCandidates.has(c.id)).sort(compareByRecommendation);
+      container.classList.remove("cards-1", "cards-2");
+      if (selectedList.length <= 2) container.classList.add(`cards-${selectedList.length}`);
 
       selectedList.forEach((cand, idx) => {
         const isMl = currentResultLang === "ml";
@@ -5005,6 +5356,8 @@
         title.style.fontWeight = "700";
         title.style.fontSize = "1.1rem";
         title.textContent = isMl ? `മുഹൂർത്ത ക്രമം #${idx + 1}: ${formatDateMl(cand.dateObj)}` : `Rank #${idx + 1}: ${cand.dateDisplay}`;
+        title.setAttribute("role", "heading");
+        title.setAttribute("aria-level", "3");
 
         const sub = document.createElement("div");
         sub.style.fontSize = "0.85rem";
@@ -5094,7 +5447,7 @@
               (qual.vetoes.length ? ` · ${isMl ? "ദോഷം" : "Dosha"}: ${(isMl ? qual.vetoes.map(v => PANCHANGA_VETO_ML[v] || v) : qual.vetoes).join(", ")}` : ""),
             color: qual.vetoes.length ? "red" : ptsColor(qual.parts.tithi + qual.parts.vara + qual.parts.nakshatra + qual.parts.yoga + qual.parts.karana, 15, 0),
             isOmitted: qual.vetoes.length > 0 && Boolean(o.omitPanchanga),
-            omittedLabel: isMl ? "പഞ്ചാംഗ ദോഷം ഒഴിവാക്കപ്പെട്ടു" : "Panchanga veto omitted in Step 2"
+            omittedLabel: isMl ? "പഞ്ചാംഗ ദോഷം ഒഴിവാക്കപ്പെട്ടു" : "Panchanga rule ignored in Step 2"
           },
           {
             key: isMl ? "ചന്ദ്രബലം" : "Chandrabala",
@@ -5167,7 +5520,7 @@
                  "Favorable Tarabalam granting continuous psychological resilience and energetic support to the promoter."),
             color: taraEval.color,
             isOmitted: taraEval.veto && Boolean(o.omitVadha),
-            omittedLabel: isMl ? "പ്രതികൂല താര ഒഴിവാക്കപ്പെട്ടു" : "Adverse Tara Omitted in Step 2"
+            omittedLabel: isMl ? "പ്രതികൂല താര ഒഴിവാക്കപ്പെട്ടു" : "Adverse Tara rule ignored in Step 2"
           },
           {
             key: isMl ? "അഷ്ടമ ശുദ്ധി (എട്ടാം ഭാവം)" : "Ashtama Shuddhi (8th House)",
@@ -5175,7 +5528,7 @@
             desc: isMl ? cand.ashtamaDescMl : cand.ashtamaDesc,
             color: cand.isAshtamaPure ? "green" : (!cand.hasMaleficIn8th ? "green" : "red"),
             isOmitted: Boolean(o.omitAshtama),
-            omittedLabel: isMl ? "അഷ്ടമശുദ്ധി ഒഴിവാക്കപ്പെട്ടു" : "Omitted in Step 2"
+            omittedLabel: isMl ? "അഷ്ടമശുദ്ധി ഒഴിവാക്കപ്പെട്ടു" : "Rule ignored in Step 2"
           },
           {
             key: isMl ? "ഗുളിക കാലം (മാന്ദി)" : "Gulikakalam (Mandi)",
@@ -5183,7 +5536,7 @@
             desc: isMl ? cand.gulikaDescMl : cand.gulikaDesc,
             color: cand.hasGulikaOverlap ? "red" : "green",
             isOmitted: Boolean(o.omitGulika),
-            omittedLabel: isMl ? "ഗുളികകാലം ഒഴിവാക്കപ്പെട്ടു" : "Omitted in Step 2"
+            omittedLabel: isMl ? "ഗുളികകാലം ഒഴിവാക്കപ്പെട്ടു" : "Rule ignored in Step 2"
           },
           {
             key: isMl ? "രാഹുകാലം" : "Rahu Kalam Interval",
@@ -5191,7 +5544,7 @@
             desc: isMl ? cand.rahuDescMl : cand.rahuDesc,
             color: cand.hasRahuOverlap ? "red" : "green",
             isOmitted: Boolean(o.omitRahu),
-            omittedLabel: isMl ? "രാഹുകാലം ഒഴിവാക്കപ്പെട്ടു" : "Omitted in Step 2"
+            omittedLabel: isMl ? "രാഹുകാലം ഒഴിവാക്കപ്പെട്ടു" : "Rule ignored in Step 2"
           },
           {
             key: isMl ? "യമഗണ്ഡ കാലം" : "Yamagandam Interval",
@@ -5199,7 +5552,7 @@
             desc: isMl ? cand.yamaDescMl : cand.yamaDesc,
             color: cand.hasYamaOverlap ? "red" : "green",
             isOmitted: Boolean(o.omitYama),
-            omittedLabel: isMl ? "യമഗണ്ഡം ഒഴിവാക്കപ്പെട്ടു" : "Omitted in Step 2"
+            omittedLabel: isMl ? "യമഗണ്ഡം ഒഴിവാക്കപ്പെട്ടു" : "Rule ignored in Step 2"
           },
           {
             key: isMl ? "സൗര സ്ഥിരത" : "Solar Stability",
@@ -5209,7 +5562,7 @@
               : `Sun is stable at ${cand.sunDegreeInSign}° in sign, completely clear of volatile Masa Sankramana ingress.`,
             color: cand.isMasaSankramana ? "red" : "green",
             isOmitted: Boolean(o.omitSankramana),
-            omittedLabel: isMl ? "മാസസംക്രമണം ഒഴിവാക്കപ്പെട്ടു" : "Omitted in Step 2"
+            omittedLabel: isMl ? "മാസസംക്രമണം ഒഴിവാക്കപ്പെട്ടു" : "Rule ignored in Step 2"
           },
           {
             key: isMl ? "കെ.പി. 10-ാം ഭാവ ഉപനാഥൻ" : "KP 10th Cuspal Sub-Lord",
@@ -5219,7 +5572,7 @@
             isOmitted: !o.sysKP || Boolean(o.omitKpNeg),
             omittedLabel: !o.sysKP
               ? (isMl ? "കെ.പി. സിസ്റ്റം നിർജ്ജീവം" : "KP Inactive in Step 1")
-              : (isMl ? "കെ.പി. തടസ്സം ഒഴിവാക്കപ്പെട്ടു" : "KP Filter Omitted in Step 2")
+              : (isMl ? "കെ.പി. തടസ്സം ഒഴിവാക്കപ്പെട്ടു" : "KP rule ignored in Step 2")
           },
           {
             key: isMl ? "വെസ്റ്റേൺ ഇലക്ഷണൽ" : "Western Electional Aspect",
@@ -5229,7 +5582,7 @@
             isOmitted: !o.sysWestern || Boolean(o.omitVoc),
             omittedLabel: !o.sysWestern
               ? (isMl ? "പാശ്ചാത്യം നിർജ്ജീവം" : "Western Inactive in Step 1")
-              : (isMl ? "ശൂന്യപഥം ഒഴിവാക്കപ്പെട്ടു" : "VoC Moon Omitted in Step 2")
+              : (isMl ? "ശൂന്യപഥം ഒഴിവാക്കപ്പെട്ടു" : "VoC rule ignored in Step 2")
           },
           {
             key: isMl ? "ചി മെൻ ദുൻ ജിയ (QMDJ)" : "Qi Men Dun Jia (QMDJ)",
@@ -5239,7 +5592,7 @@
             isOmitted: !o.sysBaZi || Boolean(o.omitBazi),
             omittedLabel: !o.sysBaZi
               ? (isMl ? "ബാസി നിർജ്ജീവം" : "BaZi Inactive in Step 1")
-              : (isMl ? "ബ്രേക്കർ ഒഴിവാക്കപ്പെട്ടു" : "BaZi Breaker Omitted in Step 2")
+              : (isMl ? "ബ്രേക്കർ ഒഴിവാക്കപ്പെട്ടു" : "BaZi rule ignored in Step 2")
           },
           {
             key: isMl ? "ഗണന എഞ്ചിൻ (Ephemeris)" : "Ephemeris Engine",
@@ -5444,6 +5797,8 @@
           relaxedBox.className = "relaxed-rules" + (hasHighSeverity ? " high" : "");
           const rbTitle = document.createElement("div");
           rbTitle.className = "relaxed-rules-title";
+          rbTitle.setAttribute("role", "heading");
+          rbTitle.setAttribute("aria-level", "4");
           rbTitle.textContent = isMl ? `ഇളവ് വരുത്തിയ നിയമങ്ങൾ (${relaxedKeys.length})` : `Rules relaxed for this muhurtham (${relaxedKeys.length})`;
           relaxedBox.appendChild(rbTitle);
           const sevLabel = { low: isMl ? "ചെറുത്" : "Low", medium: isMl ? "മധ്യമം" : "Medium", high: isMl ? "ഗൗരവം" : "High" };
@@ -5696,7 +6051,7 @@
       systemSubText.setAttribute("y", "166");
       systemSubText.setAttribute("text-anchor", "middle");
       systemSubText.setAttribute("fill", "var(--ba-accent)");
-      systemSubText.setAttribute("font-size", "8.5");
+      systemSubText.setAttribute("font-size", "9.5");
       systemSubText.textContent = isMl ? "കേരള നിരയണ സമ്പ്രദായം" : "Kerala Nirayana System";
       svg.appendChild(systemSubText);
 
@@ -5711,9 +6066,9 @@
         nameText.setAttribute("x", (cellX + 4).toString());
         nameText.setAttribute("y", (cellY + 12).toString());
         nameText.setAttribute("fill", "var(--ba-text-muted)");
-        nameText.setAttribute("font-size", "8");
+        nameText.setAttribute("font-size", "9");
         nameText.setAttribute("font-weight", "600");
-        nameText.textContent = isMl ? RASHI_NAMES_ML[r] : box.sign.substring(0, 4);
+        nameText.textContent = isMl ? RASHI_NAMES_ML[r] : RASHI_ABBR[r];
         svg.appendChild(nameText);
 
         // Planetary Occupants in Malayalam or English (Zero Hardcoding)
@@ -5747,13 +6102,14 @@
           });
         }
 
-        // Render planets vertically inside box
+        // Render planets vertically inside box (larger text; tighter only when a box is crowded)
+        const crowded = planetsInBox.length > 4;
         planetsInBox.forEach((p, pIdx) => {
           const pText = document.createElementNS(SVG_NS, "text");
           pText.setAttribute("x", (cellX + 5).toString());
-          pText.setAttribute("y", (cellY + 26 + (pIdx * 12)).toString());
+          pText.setAttribute("y", (cellY + 25 + (pIdx * (crowded ? 9.5 : 11.5))).toString());
           pText.setAttribute("fill", p.color);
-          pText.setAttribute("font-size", isMl ? "7.5" : "8.5");
+          pText.setAttribute("font-size", crowded ? "8.5" : (isMl ? "9.5" : "10"));
           if (p.bold) pText.setAttribute("font-weight", "700");
           pText.textContent = p.label;
           svg.appendChild(pText);
@@ -5815,7 +6171,7 @@
         return node;
       };
 
-      const selectedList = generatedCandidates.filter(c => selectedCandidates.has(c.id));
+      const selectedList = generatedCandidates.filter(c => selectedCandidates.has(c.id)).sort(compareByRecommendation);
       const allSwiss = selectedList.length > 0 && selectedList.every(c => c.isSwissEph);
 
       // Cover heading
@@ -5841,9 +6197,12 @@
       addRow(L("Business type / nature", "സ്ഥാപന തരം"), [optText("businessType"), optText("businessNature")].filter(Boolean).join(" · "));
       addRow(L("Business location", "സ്ഥലം"), optText("businessPlace"));
       addRow(L("Search window", "പരിശോധനാ കാലയളവ്"), `${fmtDate(val("dateStart"))} – ${fmtDate(val("dateEnd"))}`);
+      const internalChosen = selectedList.length > 0 && selectedList.every(c => c.isInternalChoice);
       addRow(L("Ephemeris engine", "ഗണന എഞ്ചിൻ"), allSwiss
         ? "Swiss Ephemeris (Astrodienst AG, GNU AGPL-3.0), Lahiri ayanamsa"
-        : L("Internal ephemeris fallback (Swiss Ephemeris unavailable when calculated)", "ആന്തരിക ഗണിത എഞ്ചിൻ (ഫാൾബാക്ക്)"));
+        : internalChosen
+          ? L("Internal ephemeris (selected), benchmarked against Swiss Ephemeris; Lahiri ayanamsa", "ആന്തരിക ഗണിത എഞ്ചിൻ (തിരഞ്ഞെടുത്തത്), സ്വിസ്സ് എഫെമെറിസുമായി ഒത്തുനോക്കിയത്")
+          : L("Internal ephemeris (Swiss Ephemeris could not load), benchmarked against Swiss Ephemeris", "ആന്തരിക ഗണിത എഞ്ചിൻ (സ്വിസ്സ് എഫെമെറിസ് ലഭ്യമല്ല)"));
       cover.appendChild(details);
 
       // Shortlist summary
@@ -5899,6 +6258,7 @@
     // =========================================================================
     // INTERACTIVE INTERNAL LOGIC AUDIT MODAL (ZERO-INNERHTML SECURE DOM)
     // =========================================================================
+    let auditModalOpener = null; // element to return focus to when the audit dialog closes
     function closeInternalLogicAuditModal() {
       const existing = document.getElementById("internalLogicAuditModal");
       if (existing) {
@@ -5907,6 +6267,8 @@
         } else if (existing.parentNode && typeof existing.parentNode.removeChild === "function") {
           existing.parentNode.removeChild(existing);
         }
+        if (auditModalOpener && typeof auditModalOpener.focus === "function") auditModalOpener.focus();
+        auditModalOpener = null;
       }
     }
 
@@ -6001,13 +6363,17 @@
 
       const dialog = document.createElement("div");
       dialog.className = "audit-modal-dialog";
+      dialog.setAttribute("role", "dialog");
+      dialog.setAttribute("aria-modal", "true");
+      dialog.setAttribute("aria-labelledby", "auditModalTitle");
 
       // Header
       const header = document.createElement("div");
       header.className = "audit-modal-header";
 
       const titleGroup = document.createElement("div");
-      const title = document.createElement("div");
+      const title = document.createElement("h2");
+      title.id = "auditModalTitle";
       title.style.fontWeight = "700";
       title.style.fontSize = "1.2rem";
       title.style.color = "var(--ba-text-main)";
@@ -6016,7 +6382,7 @@
       const sub = document.createElement("div");
       sub.style.fontSize = "0.8rem";
       sub.style.color = "var(--ba-text-muted)";
-      sub.textContent = "Live Mathematical Proofs • Formula Derivations • Benchmarking Standards";
+      sub.textContent = "Formulas, live values for the start date and benchmarks";
 
       titleGroup.appendChild(title);
       titleGroup.appendChild(sub);
@@ -6045,7 +6411,8 @@
       bTitle.textContent = "Active Ephemeris Architecture & Engine State";
       const bBadge = document.createElement("span");
       bBadge.className = "audit-badge-pass";
-      bBadge.textContent = "VERIFIED DETERMINISTIC";
+      bBadge.textContent = SWISSEPH_CONFIG.status === "READY_SWISSEPH" && SWISSEPH_CONFIG.mode !== "INTERNAL_ONLY"
+        ? "Swiss Ephemeris in use" : "Internal engine in use";
       bHeader.appendChild(bTitle);
       bHeader.appendChild(bBadge);
 
@@ -6057,7 +6424,7 @@
       bInfo2.style.fontSize = "0.8rem";
       bInfo2.style.color = "var(--ba-text-muted)";
       bInfo2.style.marginTop = "0.25rem";
-      bInfo2.textContent = `Provider Mode: ${SWISSEPH_CONFIG.mode} • Swiss Ephemeris AGPL Default with Automatic High-Precision Internal Ephemeris Fallback. Zero hardcoded mock variables.`;
+      bInfo2.textContent = `Engine mode: ${SWISSEPH_CONFIG.mode}. The candidate list and dossier use the engine named above. The formulas below show the internal engine, which is used offline or when chosen, and is benchmarked against Swiss Ephemeris (planets within 0.02°, Jupiter/Saturn within 0.2°).`;
 
       bannerCard.appendChild(bHeader);
       bannerCard.appendChild(bInfo1);
@@ -6072,10 +6439,10 @@
       ephHeader.className = "audit-metric-header";
       const ephTitle = document.createElement("div");
       ephTitle.style.fontWeight = "700";
-      ephTitle.textContent = "1. Astronomical Ephemeris Formula Derivations";
+      ephTitle.textContent = "1. Internal engine formulas (for reference)";
       const ephBadge = document.createElement("span");
       ephBadge.className = "audit-badge-pass";
-      ephBadge.textContent = "MATHEMATICALLY PROVEN";
+      ephBadge.textContent = "Benchmarked vs Swiss Ephemeris";
       ephHeader.appendChild(ephTitle);
       ephHeader.appendChild(ephBadge);
       ephemCard.appendChild(ephHeader);
@@ -6219,7 +6586,7 @@
       rTitle.textContent = "3. Traditional Kerala Panchangam & Electional Rules Audit";
       const rBadge = document.createElement("span");
       rBadge.className = "audit-badge-pass";
-      rBadge.textContent = "10 RULES VERIFIED";
+      rBadge.textContent = "Rules evaluated for the start date";
       rHeader.appendChild(rTitle);
       rHeader.appendChild(rBadge);
       rulesCard.appendChild(rHeader);
@@ -6300,11 +6667,26 @@
       backdrop.appendChild(dialog);
       document.body.appendChild(backdrop);
 
-      // Key listener for Escape
+      // Focus moves into the dialog, Tab stays inside it, and closing returns focus to the opener
+      const opener = auditModalOpener || document.activeElement;
+      auditModalOpener = opener;
+      btnClose.focus();
       const onKeyDown = (e) => {
+        if (!document.getElementById("internalLogicAuditModal")) {
+          document.removeEventListener("keydown", onKeyDown);
+          return;
+        }
         if (e.key === "Escape") {
           closeInternalLogicAuditModal();
-          document.removeEventListener("keydown", onKeyDown);
+          return;
+        }
+        if (e.key === "Tab") {
+          const focusable = [...dialog.querySelectorAll("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])")];
+          if (focusable.length === 0) return;
+          const first = focusable[0], last = focusable[focusable.length - 1];
+          if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+          else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+          else if (!dialog.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
         }
       };
       document.addEventListener("keydown", onKeyDown);
